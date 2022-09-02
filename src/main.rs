@@ -65,7 +65,7 @@ fn setup_scene(
 ) {
     commands.spawn_bundle(PbrBundle {
         mesh: meshes.add(Mesh::from(shape::Icosphere {radius: 1.0, subdivisions: 6})),
-        material: materials.add(Color::rgb(1.0,0.0,0.0).into()),
+        material: materials.add(Color::rgb(0.7,0.3,0.0).into()),
         ..default()
     });
 
