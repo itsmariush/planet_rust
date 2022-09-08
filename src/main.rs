@@ -1,7 +1,10 @@
 use std::f32::consts::PI;
 
-use bevy::{prelude::*, input::mouse::{MouseMotion, MouseWheel}, render::camera::Projection};
+use bevy::prelude::*;
+use bevy::input::mouse::*;
+use bevy::render::camera::Projection;
 use bevy_inspector_egui::WorldInspectorPlugin;
+use bevy_rapier3d::prelude::*;
 
 #[derive(Component)]
 struct PanOrbitCamera {
@@ -103,16 +106,30 @@ fn get_primary_window_size(windows: &Res<Windows>) -> Vec2 {
     window
 }
 
+fn setup_physics(mut commands: Commands) {
+    commands
+        .spawn()
+        .insert(Collider::cuboid(100.0, 0.1, 100.0))
+        .insert_bundle(TransformBundle::from(Transform::from_xyz(0.0, -2.0, 0.0)));
+
+    commands
+        .spawn()
+        .insert(RigidBody::Dynamic)
+        .insert(Collider::ball(0.5))
+        //.insert(Restitution::coefficient(0.7))
+        .insert_bundle(TransformBundle::from(Transform::from_xyz(0.0, 4.0, 0.0)));
+}
+
 fn setup_scene(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>
 ) {
-    commands.spawn_bundle(PbrBundle {
+    /* commands.spawn_bundle(PbrBundle {
         mesh: meshes.add(Mesh::from(shape::Icosphere {radius: 1.0, subdivisions: 6})),
         material: materials.add(Color::rgb(0.7,0.3,0.0).into()),
         ..default()
-    });
+    }); */
 
     commands.spawn_bundle(PointLightBundle {
         point_light: PointLight {
@@ -125,7 +142,7 @@ fn setup_scene(
     });
 
     commands.spawn_bundle(Camera3dBundle {
-        transform: Transform::from_xyz(-2.0, 2.5, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
+        transform: Transform::from_xyz(-4.0, 2.5, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
         ..default()
     })
     .insert(PanOrbitCamera::default());
@@ -134,8 +151,11 @@ fn setup_scene(
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
+        .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
+        .add_plugin(RapierDebugRenderPlugin::default())
         .add_plugin(WorldInspectorPlugin::new())
         .add_startup_system(setup_scene)
+        .add_startup_system(setup_physics)
         .add_system(pan_orbit_camera)
         .run();
 }
