@@ -6,6 +6,9 @@ use bevy::render::camera::Projection;
 use bevy_inspector_egui::WorldInspectorPlugin;
 use bevy_inspector_egui_rapier::InspectableRapierPlugin;
 use bevy_rapier3d::prelude::*;
+extern crate peroxide;
+use peroxide::fuga::*;
+use peroxide::numerical::ode;
 
 #[derive(Component)]
 struct PanOrbitCamera {
@@ -25,7 +28,9 @@ impl Default for PanOrbitCamera {
 }
 
 #[derive(Component)]
-struct CelestialBody;
+struct Sun;
+#[derive(Component)]
+struct Planet;
 
 fn pan_orbit_camera(
     windows: Res<Windows>,
@@ -110,6 +115,20 @@ fn get_primary_window_size(windows: &Res<Windows>) -> Vec2 {
     window
 }
 
+// https://towardsdatascience.com/use-python-to-create-two-body-orbits-a68aed78099c
+fn gravity_system(mut query: Query<(&Name, &mut Velocity, &Transform, &ReadMassProperties), With<Planet>>) {
+    let center = Vec3::ZERO;
+    let sun_mass = 1000.0;
+    let sun_grav_param = {
+        let pow: i64 = 10_i64.pow(11);
+        1.3271244 * pow as f64 // km^3/s^2
+    };
+    for (name, mut velocity, transform, read_mass) in query.iter_mut() {
+        //println!("{}: {}kg", name, read_mass.0.mass);
+        let distance = center.distance_squared(transform.translation);
+    }
+}
+
 fn setup_scene(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
@@ -118,13 +137,27 @@ fn setup_scene(
 ) {
     rapier_config.gravity = Vec3::ZERO;
 
+    // Plane
+    commands
+        .spawn_bundle(PbrBundle {
+            mesh: meshes.add(Mesh::from(shape::Plane {size: 100.0})),
+            material: materials.add(Color::rgb(0.5, 0.5, 0.5).into()),
+            ..default()
+        })
+    .insert(Transform::from_xyz(0.0, -2.0, 0.0));
+
     commands.spawn_bundle(PbrBundle {
         mesh: meshes.add(Mesh::from(shape::Icosphere {radius: 1.0, subdivisions: 6})),
         material: materials.add(Color::rgb(0.990, 0.945, 0.455).into()),
         ..default()})
         .insert(RigidBody::Dynamic)
         .insert(Collider::ball(1.0))
-        .insert(Name::new("Sun"));
+        .insert(ColliderMassProperties::Mass(100.0))
+        .insert(ReadMassProperties {
+            ..Default::default()
+        })
+        .insert(Name::new("Sun"))
+        .insert(Sun);
     
     commands.spawn_bundle(PbrBundle {
         mesh: meshes.add(Mesh::from(shape::Icosphere {radius: 1.0, subdivisions: 6})),
@@ -132,7 +165,12 @@ fn setup_scene(
         ..default()})
         .insert(RigidBody::Dynamic)
         .insert(Collider::ball(1.0))
-        .insert(Name::new("Earth"));
+        .insert(ColliderMassProperties::Mass(1.0))
+        .insert(Transform::from_xyz(4.0, 0.0, 4.0))
+        .insert(ReadMassProperties::default())
+        .insert(Velocity::default())
+        .insert(Name::new("Earth"))
+        .insert(Planet);
 
     commands.spawn_bundle(PointLightBundle {
         point_light: PointLight {
@@ -151,7 +189,49 @@ fn setup_scene(
     .insert(PanOrbitCamera::default());
 }
 
+fn f(st: &mut ode::State<f64>, _: &NoEnv) {
+    let sun_grav_param = {
+        let pow: i64 = 10_i64.pow(2);
+        1.3271244 * pow as f64 // km^3/s^2
+    };
+    println!("x: {:?}", &st.value);
+    println!("dx: {:?}", &st.deriv);
+
+    let x = st.value[0];
+    let y = st.value[1];
+    let z = st.value[2];
+    let x_dot = st.deriv[0];
+    let y_dot = st.deriv[1];
+    let z_dot = st.deriv[2];
+
+    let t = (x.pow(2.0) + y.pow(2.0) + z.pow(2.0)).pow(3.0/2.0);
+    let x_ddot = -sun_grav_param * x / t;
+    let y_ddot = -sun_grav_param * y / t;
+    let z_ddot = -sun_grav_param * z / t;
+
+    st.value = vec![x_dot, y_dot, z_dot];
+    st.deriv = vec![x_ddot, y_ddot, z_ddot];
+}
+
 fn main() {
+    let mut ode_test = ExplicitODE::new(f);
+    let init_state : ode::State<f64> = ode::State::new(
+            0.0,
+            vec![10.0, 1.0, 1.0],
+            vec![2.0,0.0,0.0]
+        );
+    let result = ode_test
+        .set_initial_condition(init_state)
+        .set_method(ExMethod::Euler)
+        .set_step_size(0.01f64)
+        .set_times(10)
+        .integrate();
+
+    let mut df = DataFrame::new(vec![]);
+    df.push("x_euler", Series::new(result.col(1)));
+    df.push("z_euler", Series::new(result.col(2)));
+    df.write_nc("orbit.nc").expect("Failed to write plot");
+
     App::new()
         .add_plugins(DefaultPlugins)
         .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
@@ -160,5 +240,6 @@ fn main() {
         .add_plugin(WorldInspectorPlugin::new())
         .add_startup_system(setup_scene)
         .add_system(pan_orbit_camera)
+        .add_system(gravity_system)
         .run();
 }
