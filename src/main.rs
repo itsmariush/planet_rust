@@ -4,6 +4,7 @@ use bevy::prelude::*;
 use bevy::input::mouse::*;
 use bevy::render::camera::Projection;
 use bevy_inspector_egui::WorldInspectorPlugin;
+use bevy_inspector_egui_rapier::InspectableRapierPlugin;
 use bevy_rapier3d::prelude::*;
 
 #[derive(Component)]
@@ -22,6 +23,9 @@ impl Default for PanOrbitCamera {
         }
     }
 }
+
+#[derive(Component)]
+struct CelestialBody;
 
 fn pan_orbit_camera(
     windows: Res<Windows>,
@@ -106,30 +110,29 @@ fn get_primary_window_size(windows: &Res<Windows>) -> Vec2 {
     window
 }
 
-fn setup_physics(mut commands: Commands) {
-    commands
-        .spawn()
-        .insert(Collider::cuboid(100.0, 0.1, 100.0))
-        .insert_bundle(TransformBundle::from(Transform::from_xyz(0.0, -2.0, 0.0)));
-
-    commands
-        .spawn()
-        .insert(RigidBody::Dynamic)
-        .insert(Collider::ball(0.5))
-        //.insert(Restitution::coefficient(0.7))
-        .insert_bundle(TransformBundle::from(Transform::from_xyz(0.0, 4.0, 0.0)));
-}
-
 fn setup_scene(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    mut rapier_config: ResMut<RapierConfiguration>
 ) {
-    /* commands.spawn_bundle(PbrBundle {
+    rapier_config.gravity = Vec3::ZERO;
+
+    commands.spawn_bundle(PbrBundle {
         mesh: meshes.add(Mesh::from(shape::Icosphere {radius: 1.0, subdivisions: 6})),
-        material: materials.add(Color::rgb(0.7,0.3,0.0).into()),
-        ..default()
-    }); */
+        material: materials.add(Color::rgb(0.990, 0.945, 0.455).into()),
+        ..default()})
+        .insert(RigidBody::Dynamic)
+        .insert(Collider::ball(1.0))
+        .insert(Name::new("Sun"));
+    
+    commands.spawn_bundle(PbrBundle {
+        mesh: meshes.add(Mesh::from(shape::Icosphere {radius: 1.0, subdivisions: 6})),
+        material: materials.add(Color::rgb(0.0, 0.0, 1.0).into()),
+        ..default()})
+        .insert(RigidBody::Dynamic)
+        .insert(Collider::ball(1.0))
+        .insert(Name::new("Earth"));
 
     commands.spawn_bundle(PointLightBundle {
         point_light: PointLight {
@@ -153,9 +156,9 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
         .add_plugin(RapierDebugRenderPlugin::default())
+        .add_plugin(InspectableRapierPlugin)
         .add_plugin(WorldInspectorPlugin::new())
         .add_startup_system(setup_scene)
-        .add_startup_system(setup_physics)
         .add_system(pan_orbit_camera)
         .run();
 }
