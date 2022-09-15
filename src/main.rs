@@ -1,3 +1,4 @@
+use std::convert::TryInto;
 use std::f32::consts::PI;
 
 use bevy::prelude::*;
@@ -9,6 +10,8 @@ use bevy_rapier3d::prelude::*;
 extern crate peroxide;
 use peroxide::fuga::*;
 use peroxide::numerical::ode;
+
+const _G: f32 = 1f32;//6.67259e-20;
 
 #[derive(Component)]
 struct PanOrbitCamera {
@@ -129,6 +132,15 @@ fn gravity_system(mut query: Query<(&Name, &mut Velocity, &Transform, &ReadMassP
     }
 }
 
+// Calculate Center of Mass of two bodies
+fn calc_com(m1: f32, m2: f32, r1: Vec3, r2: Vec3) -> Vec3 {
+    // Rcom = (m1*R1 + m2*R2) / (m1 + m2)
+    let rx = (m1 * r1.x + m2 * r2.x) / (m1 + m2);
+    let ry = (m1 * r1.y + m2 * r2.y) / (m1 + m2);
+    let rz = (m1 * r1.z + m2 * r2.z) / (m1 + m2);
+    Vec3::new(rx, ry, rz)
+}
+
 fn setup_scene(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
@@ -146,6 +158,7 @@ fn setup_scene(
         })
     .insert(Transform::from_xyz(0.0, -2.0, 0.0));
 
+    // Sun
     commands.spawn_bundle(PbrBundle {
         mesh: meshes.add(Mesh::from(shape::Icosphere {radius: 1.0, subdivisions: 6})),
         material: materials.add(Color::rgb(0.990, 0.945, 0.455).into()),
@@ -159,6 +172,7 @@ fn setup_scene(
         .insert(Name::new("Sun"))
         .insert(Sun);
     
+    // Earth
     commands.spawn_bundle(PbrBundle {
         mesh: meshes.add(Mesh::from(shape::Icosphere {radius: 1.0, subdivisions: 6})),
         material: materials.add(Color::rgb(0.0, 0.0, 1.0).into()),
@@ -166,11 +180,62 @@ fn setup_scene(
         .insert(RigidBody::Dynamic)
         .insert(Collider::ball(1.0))
         .insert(ColliderMassProperties::Mass(1.0))
-        .insert(Transform::from_xyz(4.0, 0.0, 4.0))
+        .insert(Transform::from_xyz(15.0, 0.0, 0.0))
         .insert(ReadMassProperties::default())
         .insert(Velocity::default())
         .insert(Name::new("Earth"))
         .insert(Planet);
+
+    let com : Vec3 = calc_com(1000f32, 200f32, Vec3::ZERO, Vec3::new(4.0, 0.0, 4.0));
+    println!("Center of Mass: {com}");
+
+    // Center of Mass
+    commands.spawn_bundle(PbrBundle {
+        mesh: meshes.add(Mesh::from(shape::Icosphere {radius: 0.5, subdivisions: 6})),
+        material: materials.add(Color::rgb(0.0, 1.0, 0.0).into()),
+        ..default()})
+        .insert(Transform::from_translation(com))
+        .insert(ReadMassProperties::default())
+        .insert(Velocity::default())
+        .insert(Name::new("COM"))
+        .insert(Planet);
+
+    let mut ode_test = ExplicitODE::new(f);
+    let init_state : ode::State<f64> = ode::State::new(
+            0.0,
+            vec![0.0, 0.0, 0.0, 15.0, 1.0, 1.0],
+            vec![0.0, 0.0, 0.0, 0.0, 10.0, 0.0]
+        );
+    let result = ode_test
+        .set_initial_condition(init_state)
+        .set_method(ExMethod::RK4)
+        .set_step_size(0.0001f64)
+        .set_times(100)
+        .integrate();
+
+    println!("{result}");
+
+    for n in 0..result.row {
+        let row = result.row(n);
+
+        commands.spawn_bundle(PbrBundle {
+            mesh: meshes.add(Mesh::from(shape::Icosphere {radius: 0.2, subdivisions: 6})),
+            material: materials.add(Color::rgb(1.0, 0.0, 0.0).into()),
+            ..default()})
+            .insert(Transform::from_xyz(row[1] as f32, row[2] as f32, row[3] as f32))
+            .insert(ReadMassProperties::default())
+            .insert(Velocity::default())
+            .insert(Name::new("Trajectory1"));
+            
+        commands.spawn_bundle(PbrBundle {
+            mesh: meshes.add(Mesh::from(shape::Icosphere {radius: 0.2, subdivisions: 6})),
+            material: materials.add(Color::rgb(0.0, 0.0, 1.0).into()),
+            ..default()})
+            .insert(Transform::from_xyz(row[4] as f32, row[5] as f32, row[6] as f32))
+            .insert(ReadMassProperties::default())
+            .insert(Velocity::default())
+            .insert(Name::new("Trajectory2"));
+    }
 
     commands.spawn_bundle(PointLightBundle {
         point_light: PointLight {
@@ -190,47 +255,35 @@ fn setup_scene(
 }
 
 fn f(st: &mut ode::State<f64>, _: &NoEnv) {
-    let sun_grav_param = {
-        let pow: i64 = 10_i64.pow(2);
-        1.3271244 * pow as f64 // km^3/s^2
-    };
-    println!("x: {:?}", &st.value);
-    println!("dx: {:?}", &st.deriv);
+    let value = &mut st.value;
+    let derive = &mut st.deriv; 
+    
+    let r1 = Vec3::new(value[0] as f32, value[1] as f32, value[2] as f32);
+    let r2 = Vec3::new(value[3] as f32, value[4] as f32, value[5] as f32);
 
-    let x = st.value[0];
-    let y = st.value[1];
-    let z = st.value[2];
-    let x_dot = st.deriv[0];
-    let y_dot = st.deriv[1];
-    let z_dot = st.deriv[2];
+    let r_mag = (r2 - r1).normalize();
 
-    let t = (x.pow(2.0) + y.pow(2.0) + z.pow(2.0)).pow(3.0/2.0);
-    let x_ddot = -sun_grav_param * x / t;
-    let y_ddot = -sun_grav_param * y / t;
-    let z_ddot = -sun_grav_param * z / t;
+    // X1 = G * m2 * ((X2-X1) / r^3)
+    let m2 = 0.1f32;
+    let m1 = 33.3f32;
+    let r_mag3 = r_mag.powf(3.0);
+    let nx1 = _G * m2 * ((r2.x - r1.x) / r_mag3.x);
+    let ny1 = _G * m2 * ((r2.y - r1.y) / r_mag3.y);
+    let nz1 = _G * m2 * ((r2.z - r1.z) / r_mag3.z);
+ 
+    let nx2 = _G * m1 * ((r1.x - r2.x) / r_mag3.x);
+    let ny2 = _G * m1 * ((r1.y - r2.y) / r_mag3.y);
+    let nz2 = _G * m1 * ((r1.z - r2.z) / r_mag3.z);
 
-    st.value = vec![x_dot, y_dot, z_dot];
-    st.deriv = vec![x_ddot, y_ddot, z_ddot];
+    derive[0] = nx1 as f64;
+    derive[1] = ny1 as f64;
+    derive[2] = nz1 as f64;
+    derive[3] = nx2 as f64;
+    derive[4] = ny2 as f64;
+    derive[5] = nz2 as f64;
 }
 
 fn main() {
-    let mut ode_test = ExplicitODE::new(f);
-    let init_state : ode::State<f64> = ode::State::new(
-            0.0,
-            vec![10.0, 1.0, 1.0],
-            vec![2.0,0.0,0.0]
-        );
-    let result = ode_test
-        .set_initial_condition(init_state)
-        .set_method(ExMethod::Euler)
-        .set_step_size(0.01f64)
-        .set_times(10)
-        .integrate();
-
-    let mut df = DataFrame::new(vec![]);
-    df.push("x_euler", Series::new(result.col(1)));
-    df.push("z_euler", Series::new(result.col(2)));
-    df.write_nc("orbit.nc").expect("Failed to write plot");
 
     App::new()
         .add_plugins(DefaultPlugins)

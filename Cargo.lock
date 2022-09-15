@@ -1875,21 +1875,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "hdf5-sys"
-version = "0.8.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4842d5980dc311a7c8933c7b45534fdae84df5ae7939a0ae8e449a56d4beb3d2"
-dependencies = [
- "libc",
- "libloading",
- "pkg-config",
- "regex",
- "serde",
- "serde_derive",
- "winreg",
-]
-
-[[package]]
 name = "hermit-abi"
 version = "0.1.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2166,18 +2151,6 @@ checksum = "3c8469b4a23b962c1396b9b451dda50ef5b283e8dd309d69033475fa9b334324"
 dependencies = [
  "libc",
  "pkg-config",
-]
-
-[[package]]
-name = "libz-sys"
-version = "1.1.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9702761c3935f8cc2f101793272e202c72b99da8f4224a19ddcf1279a6450bbf"
-dependencies = [
- "cc",
- "libc",
- "pkg-config",
- "vcpkg",
 ]
 
 [[package]]
@@ -2458,27 +2431,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6e5a6ae77c8ee183dcbbba6150e2e6b9f3f4196a7666c02a715a95692ec1fa97"
 dependencies = [
  "jni-sys",
-]
-
-[[package]]
-name = "netcdf"
-version = "0.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9668c493289156ed0dce9472ea33ab7a6f6dfe4565a8433bd103995f8053b467"
-dependencies = [
- "bitflags",
- "lazy_static",
- "netcdf-sys",
-]
-
-[[package]]
-name = "netcdf-sys"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f1028362b1f88b5c4bdf3538b202b2c83ab3cc8a5537f6337ac147e6e36dc5f9"
-dependencies = [
- "hdf5-sys",
- "libz-sys",
 ]
 
 [[package]]
@@ -2854,7 +2806,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bd05e3ed4867d419164710db15e636beaec5dc8627a638bfbe381bb7c9ebf71a"
 dependencies = [
  "matrixmultiply",
- "netcdf",
  "order-stat",
  "peroxide-ad",
  "puruspe",
@@ -3590,12 +3541,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "830b7e5d4d90034032940e4ace0d9a9a057e7a45cd94e6c007832e39edb82f6d"
 
 [[package]]
-name = "vcpkg"
-version = "0.2.15"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "accd4ea62f7bb7a82fe23066fb0957d48ef677f6eeb8215f372f52e48bb32426"
-
-[[package]]
 name = "vec_map"
 version = "0.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3947,16 +3892,6 @@ dependencies = [
  "web-sys",
  "winapi",
  "x11-dl",
-]
-
-[[package]]
-name = "winreg"
-version = "0.10.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "80d0f4e272c85def139476380b12f9ac60926689dd2e01d4923222f40580869d"
-dependencies = [
- "serde",
- "winapi",
 ]
 
 [[package]]

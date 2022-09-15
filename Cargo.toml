@@ -10,7 +10,7 @@ bevy = { version="0.8.0", features=[ "dynamic"] }
 bevy-inspector-egui = "0.12.1"
 bevy_rapier3d = { version = "0.16.2", features = [ 'debug-render' ] }
 bevy-inspector-egui-rapier = { version = "0.5.0", features = [ 'rapier3d' ] }
-peroxide = {version = "*", features = ["nc"]} 
+peroxide = {version = "*", features = []} 
 
 # Enable a small amount of optimization in debug mode
 [profile.dev]
