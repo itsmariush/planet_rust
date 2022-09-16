@@ -1,4 +1,3 @@
-use std::convert::TryInto;
 use std::f32::consts::PI;
 use std::time::Instant;
 
@@ -33,7 +32,9 @@ impl Default for PanOrbitCamera {
 #[derive(Component)]
 struct Sun;
 #[derive(Component)]
-struct Planet;
+struct Planet {
+    trajectory: Trajectory,
+}
 
 fn pan_orbit_camera(
     windows: Res<Windows>,
@@ -122,22 +123,6 @@ fn get_primary_window_size(windows: &Res<Windows>) -> Vec2 {
     window
 }
 
-// https://towardsdatascience.com/use-python-to-create-two-body-orbits-a68aed78099c
-fn gravity_system(
-    mut query: Query<(&Name, &mut Velocity, &Transform, &ReadMassProperties), With<Planet>>,
-) {
-    let center = Vec3::ZERO;
-    let sun_mass = 1000.0;
-    let sun_grav_param = {
-        let pow: i64 = 10_i64.pow(11);
-        1.3271244 * pow as f64 // km^3/s^2
-    };
-    for (name, mut velocity, transform, read_mass) in query.iter_mut() {
-        //println!("{}: {}kg", name, read_mass.0.mass);
-        let distance = center.distance_squared(transform.translation);
-    }
-}
-
 // Calculate Center of Mass of two bodies
 fn calc_com(m1: f32, m2: f32, r1: Vec3, r2: Vec3) -> Vec3 {
     // Rcom = (m1*R1 + m2*R2) / (m1 + m2)
@@ -145,6 +130,94 @@ fn calc_com(m1: f32, m2: f32, r1: Vec3, r2: Vec3) -> Vec3 {
     let ry = (m1 * r1.y + m2 * r2.y) / (m1 + m2);
     let rz = (m1 * r1.z + m2 * r2.z) / (m1 + m2);
     Vec3::new(rx, ry, rz)
+}
+
+#[derive(Debug, Default)]
+struct Trajectory {
+    position: Vec<Vec3>,
+    velocity: Vec<Vec3>,
+}
+
+fn calculate_trajectory(translation: Vec3, velocity: Vec3, step_size: f64, times: f64) -> (Vec<Vec3>, Vec<Vec3>) {
+
+    let mut ode_test = ExplicitODE::new(f);
+    let init_state: ode::State<f64> = ode::State::new(
+        0.0,
+        vec![translation.x as f64, translation.y as f64, translation.z as f64, velocity.x as f64, velocity.y as f64, velocity.z as f64],
+        vec![0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    );
+    let start = Instant::now();
+    let result = ode_test
+        .set_initial_condition(init_state)
+        .set_method(ExMethod::RK4)
+        .set_step_size(1.0f64)
+        .set_times(100)
+        .integrate();
+    let duration = start.elapsed();
+    println!("{result}");
+    println!("Time elapsed integrating: {duration:?}");
+
+
+    let mut positions: Vec<Vec3> = vec![];
+    let mut velocities: Vec<Vec3> = vec![];
+    for n in (0..result.row).rev() {
+        let row = result.row(n);
+        positions.push(
+            Vec3::new(
+                    row[1] as f32,
+                    row[2] as f32,
+                    row[3] as f32,
+                )
+            );
+        velocities.push(
+            Vec3::new(
+                    row[4] as f32,
+                    row[5] as f32,
+                    row[6] as f32,
+                )
+            );
+    }
+    (positions, velocities)
+
+    /*for n in 0..result.row {
+        let row = result.row(n);
+        commands
+            .spawn_bundle(PbrBundle {
+                mesh: meshes.add(Mesh::from(shape::Icosphere {
+                    radius: 0.1,
+                    subdivisions: 3,
+                })),
+                material: materials.add(Color::rgb(1.0, 0.0, 0.0).into()),
+                ..default()
+            })
+            .insert(Transform::from_xyz(
+                row[1] as f32,
+                row[2] as f32,
+                row[3] as f32,
+            ))
+            .insert(ReadMassProperties::default())
+            .insert(Velocity::default())
+            .insert(Name::new("Trajectory1"));
+    }
+    */
+}
+
+fn gravity_system(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    mut query: Query<(&mut Planet, &Name, &mut Velocity, &mut Transform), With<Planet>>,
+) {
+    for (mut planet, name, mut velocity, mut transform) in query.iter_mut() {
+        if planet.trajectory.position.len() < 1 || planet.trajectory.velocity.len() < 1 {
+           let traj: (Vec<Vec3>, Vec<Vec3>)  = calculate_trajectory(transform.translation, velocity.linvel, 1.0, 100.0);
+           planet.trajectory.position = traj.0;
+           planet.trajectory.velocity = traj.1;
+        } else {
+            transform.translation = planet.trajectory.position.pop().unwrap();
+            velocity.linvel = planet.trajectory.velocity.pop().unwrap();
+        }
+    }
 }
 
 fn setup_scene(
@@ -183,6 +256,9 @@ fn setup_scene(
         .insert(Name::new("Sun"))
         .insert(Sun);
 
+    let r_mag = 15f64;
+    let v_mag = (MU / r_mag).sqrt();
+    let traj = calculate_trajectory(Vec3::new(r_mag as f32, 0.0, 0.0), Vec3::new(0.0,0.0,v_mag as f32), 1.0, 100.0);
     // Earth
     commands
         .spawn_bundle(PbrBundle {
@@ -200,68 +276,10 @@ fn setup_scene(
         .insert(ReadMassProperties::default())
         .insert(Velocity::default())
         .insert(Name::new("Earth"))
-        .insert(Planet);
+        .insert(Planet {
+            trajectory: Trajectory { position: traj.0, velocity: traj.1 }
+        });
 
-    let com: Vec3 = calc_com(1000f32, 200f32, Vec3::ZERO, Vec3::new(4.0, 0.0, 4.0));
-    println!("Center of Mass: {com}");
-
-    // Center of Mass
-    commands
-        .spawn_bundle(PbrBundle {
-            mesh: meshes.add(Mesh::from(shape::Icosphere {
-                radius: 0.5,
-                subdivisions: 6,
-            })),
-            material: materials.add(Color::rgb(0.0, 1.0, 0.0).into()),
-            ..default()
-        })
-        .insert(Transform::from_translation(com))
-        .insert(ReadMassProperties::default())
-        .insert(Velocity::default())
-        .insert(Name::new("COM"))
-        .insert(Planet);
-
-    let r_mag = 15f64;
-    let v_mag = (MU / r_mag).sqrt();
-    let mut ode_test = ExplicitODE::new(f);
-    println!("V_Mag: {v_mag}");
-    let init_state: ode::State<f64> = ode::State::new(
-        0.0,
-        vec![r_mag as f64, 0.0, 0.0, 0.0, 0.0, v_mag as f64],
-        vec![0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-    );
-    let start = Instant::now();
-    let result = ode_test
-        .set_initial_condition(init_state)
-        .set_method(ExMethod::RK4)
-        .set_step_size(1.0f64)
-        .set_times(350)
-        .integrate();
-    let duration = start.elapsed();
-
-    println!("{result}");
-    println!("Time elapsed integrating: {duration:?}");
-
-    for n in 0..result.row {
-        let row = result.row(n);
-        commands
-            .spawn_bundle(PbrBundle {
-                mesh: meshes.add(Mesh::from(shape::Icosphere {
-                    radius: 0.1,
-                    subdivisions: 3,
-                })),
-                material: materials.add(Color::rgb(1.0, 0.0, 0.0).into()),
-                ..default()
-            })
-            .insert(Transform::from_xyz(
-                row[1] as f32,
-                row[2] as f32,
-                row[3] as f32,
-            ))
-            .insert(ReadMassProperties::default())
-            .insert(Velocity::default())
-            .insert(Name::new("Trajectory1"));
-    }
 
     commands.spawn_bundle(PointLightBundle {
         point_light: PointLight {
@@ -288,7 +306,6 @@ const MU: f64 = (M1*M2)/(M1+M2);
 fn f(st: &mut ode::State<f64>, _: &NoEnv) {
     let value = &st.value;
     let derive = &mut st.deriv;
-    // mu = (m1*m2)/(m1+m2)
 
     let mut r: Vec3 = Vec3::ZERO;
     let mut v: Vec3 = Vec3::ZERO;
@@ -298,24 +315,18 @@ fn f(st: &mut ode::State<f64>, _: &NoEnv) {
             v = Vec3::new(vx as f32, vy as f32, vz as f32);
         }
     }
-    println!("R: {r} V: {v}");
     let r_norm = r.length();
-    println!("R_Norm: {r_norm}");
    
-    let a  = r * MU as f32 / r_norm.powf(3.0);
     let ax = -r.x as f64 * MU / r_norm.powi(3) as f64;
     let ay = -r.y as f64 * MU / r_norm.powi(3) as f64;
     let az = -r.z as f64 * MU / r_norm.powi(3) as f64;
-    println!("AA: {a}");
-    println!("A: {ax} {ay} {az}");
 
     derive[0] = v.x as f64;
     derive[1] = v.y as f64;
     derive[2] = v.z as f64;
-    derive[3] = if ax.is_nan() { 0f64 } else { ax as f64};
-    derive[4] = if ay.is_nan() { 0f64 } else { ay as f64};
-    derive[5] = if az.is_nan() { 0f64 } else { az as f64};
-
+    derive[3] = ax as f64;
+    derive[4] = ay as f64;
+    derive[5] = az as f64;
 }
 
 fn main() {
