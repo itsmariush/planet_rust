@@ -1,5 +1,6 @@
 use std::convert::TryInto;
 use std::f32::consts::PI;
+use std::time::Instant;
 
 use bevy::input::mouse::*;
 use bevy::prelude::*;
@@ -229,14 +230,17 @@ fn setup_scene(
         vec![r_mag as f64, 0.0, 0.0, 0.0, 0.0, v_mag as f64],
         vec![0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
     );
+    let start = Instant::now();
     let result = ode_test
         .set_initial_condition(init_state)
         .set_method(ExMethod::RK4)
         .set_step_size(1.0f64)
         .set_times(350)
         .integrate();
+    let duration = start.elapsed();
 
     println!("{result}");
+    println!("Time elapsed integrating: {duration:?}");
 
     for n in 0..result.row {
         let row = result.row(n);
