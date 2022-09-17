@@ -53,12 +53,6 @@ fn setup_scene(
             material: materials.add(Color::rgb(0.990, 0.945, 0.455).into()),
             ..default()
         })
-        .insert(RigidBody::Dynamic)
-        .insert(Collider::ball(1.0))
-        .insert(ColliderMassProperties::Mass(100.0))
-        .insert(ReadMassProperties {
-            ..Default::default()
-        })
         .insert(Name::new("Sun"))
         .insert(Sun);
 
@@ -70,7 +64,7 @@ fn setup_scene(
         commands
             .spawn_bundle(PbrBundle {
                 mesh: meshes.add(Mesh::from(shape::Icosphere {
-                    radius: 0.1,
+                    radius: 0.05,
                     subdivisions: 1,
                 })),
                 material: materials.add(Color::rgb(0.0, 0.0, 1.0).into()),
@@ -82,17 +76,13 @@ fn setup_scene(
     commands
         .spawn_bundle(PbrBundle {
             mesh: meshes.add(Mesh::from(shape::Icosphere {
-                radius: 1.0,
+                radius: 0.5,
                 subdivisions: 6,
             })),
             material: materials.add(Color::rgb(0.0, 0.0, 1.0).into()),
             ..default()
         })
-        .insert(RigidBody::Dynamic)
-        .insert(Collider::ball(1.0))
-        .insert(ColliderMassProperties::Mass(1.0))
         .insert(Transform::from_xyz(r_mag as f32, 0.0, 0.0))
-        .insert(ReadMassProperties::default())
         .insert(Velocity::default())
         .insert(Name::new("Earth"))
         .insert(Planet {

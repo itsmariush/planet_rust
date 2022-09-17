@@ -3,6 +3,7 @@ use std::time::Instant;
 use bevy::prelude::*;
 use peroxide::prelude::*;
 use peroxide::numerical::ode;
+use peroxide::c;
 
 #[derive(Debug)]
 pub struct TrajectoryPoint {
@@ -32,24 +33,21 @@ impl Trajectory {
         }
     }
     pub fn calculate_trajectory(translation: Vec<f64>, velocity: Vec<f64>, step_size: f64, times: usize) -> Vec<TrajectoryPoint> {
-
         fn f(st: &mut ode::State<f64>, _: &NoEnv) {
             let value = &st.value;
             let derive = &mut st.deriv;
-
-            let r: Matrix = Matrix {
-                data: value[0..3].to_vec(),
-                row: 3,
-                col: 1,
-                shape: Col,
-            };
+            
+            // current position
+            let r = &value[0..3].to_vec();
             let r_norm = r.norm();
           
-            let ax = -r.data[0] * MU / r_norm.powi(3);
-            let ay = -r.data[1] * MU / r_norm.powi(3);
-            let az = -r.data[2] * MU / r_norm.powi(3);
-            
+            // current velocity
             let velocity = &value[3..6];
+
+            // acceleration
+            let ax = -r[0] * MU / r_norm.powi(3);
+            let ay = -r[1] * MU / r_norm.powi(3);
+            let az = -r[2] * MU / r_norm.powi(3);
 
             derive[0] = velocity[0];
             derive[1] = velocity[1];
@@ -62,7 +60,7 @@ impl Trajectory {
         let mut ode_test = ExplicitODE::new(f);
         let init_state: ode::State<f64> = ode::State::new(
             0.0,
-            peroxide::c![translation; velocity],
+            c![translation; velocity],
             vec![0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
             );
         let start = Instant::now();
@@ -75,7 +73,6 @@ impl Trajectory {
         let duration = start.elapsed();
         println!("{result}");
         println!("Time elapsed integrating: {duration:?}");
-
 
         let mut points: Vec<TrajectoryPoint> = vec![];
         for n in (0..result.row).rev() {
