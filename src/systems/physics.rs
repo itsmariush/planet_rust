@@ -14,7 +14,7 @@ pub fn gravity_system(
                 transform.translation.y = t.position[1] as f32;
                 transform.translation.z = t.position[2] as f32;
                 if planet.trajectory.points.is_empty() {
-                    planet.trajectory.points = Trajectory::calculate_trajectory(t.position, t.velocity, 0.01, 10);
+                    planet.trajectory.points = Trajectory::calculate_trajectory(t.position, t.velocity, MU, 0.01, 10);
                 }
             },
             _ => {}
