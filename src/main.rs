@@ -10,6 +10,7 @@ use bevy_rapier3d::prelude::*;
 extern crate peroxide;
 use peroxide::fuga::*;
 use peroxide::numerical::ode;
+use peroxide::prelude::SimpleNorm;
 
 
 #[derive(Component)]
@@ -132,52 +133,47 @@ fn calc_com(m1: f32, m2: f32, r1: Vec3, r2: Vec3) -> Vec3 {
     Vec3::new(rx, ry, rz)
 }
 
-#[derive(Debug, Default)]
-struct Trajectory {
-    position: Vec<Vec3>,
-    velocity: Vec<Vec3>,
+#[derive(Debug)]
+struct TrajectoryPoint {
+    position: Vec<f64>,
+    velocity: Vec<f64>,
 }
 
-fn calculate_trajectory(translation: Vec3, velocity: Vec3, step_size: f64, times: f64) -> (Vec<Vec3>, Vec<Vec3>) {
+#[derive(Debug, Default)]
+struct Trajectory {
+    points: Vec<TrajectoryPoint>,
+}
+
+fn calculate_trajectory(translation: Vec<f64>, velocity: Vec<f64>, step_size: f64, times: usize) -> Vec<TrajectoryPoint> {
 
     let mut ode_test = ExplicitODE::new(f);
     let init_state: ode::State<f64> = ode::State::new(
         0.0,
-        vec![translation.x as f64, translation.y as f64, translation.z as f64, velocity.x as f64, velocity.y as f64, velocity.z as f64],
+        peroxide::c![translation; velocity],
         vec![0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
     );
     let start = Instant::now();
     let result = ode_test
         .set_initial_condition(init_state)
         .set_method(ExMethod::RK4)
-        .set_step_size(1.0f64)
-        .set_times(100)
+        .set_step_size(step_size)
+        .set_times(times)
         .integrate();
     let duration = start.elapsed();
     println!("{result}");
     println!("Time elapsed integrating: {duration:?}");
 
 
-    let mut positions: Vec<Vec3> = vec![];
-    let mut velocities: Vec<Vec3> = vec![];
+    let mut points: Vec<TrajectoryPoint> = vec![];
     for n in (0..result.row).rev() {
         let row = result.row(n);
-        positions.push(
-            Vec3::new(
-                    row[1] as f32,
-                    row[2] as f32,
-                    row[3] as f32,
-                )
-            );
-        velocities.push(
-            Vec3::new(
-                    row[4] as f32,
-                    row[5] as f32,
-                    row[6] as f32,
-                )
-            );
+        points.push(
+            TrajectoryPoint { 
+                position: row[1..4].to_vec(),
+                velocity: row[4..7].to_vec() 
+            });
     }
-    (positions, velocities)
+    return points;
 
     /*for n in 0..result.row {
         let row = result.row(n);
@@ -209,13 +205,18 @@ fn gravity_system(
     mut query: Query<(&mut Planet, &Name, &mut Velocity, &mut Transform), With<Planet>>,
 ) {
     for (mut planet, name, mut velocity, mut transform) in query.iter_mut() {
-        if planet.trajectory.position.len() < 1 || planet.trajectory.velocity.len() < 1 {
-           let traj: (Vec<Vec3>, Vec<Vec3>)  = calculate_trajectory(transform.translation, velocity.linvel, 1.0, 100.0);
-           planet.trajectory.position = traj.0;
-           planet.trajectory.velocity = traj.1;
-        } else {
-            transform.translation = planet.trajectory.position.pop().unwrap();
-            velocity.linvel = planet.trajectory.velocity.pop().unwrap();
+        match planet.trajectory.points.pop() {
+            Some(t) => {
+                transform.translation.x = t.position[0] as f32;
+                transform.translation.y = t.position[1] as f32;
+                transform.translation.z = t.position[2] as f32;
+                if planet.trajectory.points.is_empty() {
+                    planet.trajectory.points = calculate_trajectory(t.position, t.velocity, 1.0, 100);
+                }
+            },
+            None => {
+                // TODO: handle or find other way to match pop() 
+            }
         }
     }
 }
@@ -258,7 +259,19 @@ fn setup_scene(
 
     let r_mag = 15f64;
     let v_mag = (MU / r_mag).sqrt();
-    let traj = calculate_trajectory(Vec3::new(r_mag as f32, 0.0, 0.0), Vec3::new(0.0,0.0,v_mag as f32), 1.0, 100.0);
+    let traj= calculate_trajectory(vec![r_mag, 0.0, 0.0], vec![0.0, 0.0, v_mag], 1.0, 400);
+    for pos in &traj {
+        commands
+            .spawn_bundle(PbrBundle {
+                mesh: meshes.add(Mesh::from(shape::Icosphere {
+                    radius: 0.2,
+                    subdivisions: 3,
+                })),
+                material: materials.add(Color::rgb(0.0, 0.0, 1.0).into()),
+                ..default()
+            })
+            .insert(Transform::from_xyz(pos.position[0] as f32, pos.position[1] as f32, pos.position[2] as f32));
+    }
     // Earth
     commands
         .spawn_bundle(PbrBundle {
@@ -272,14 +285,13 @@ fn setup_scene(
         .insert(RigidBody::Dynamic)
         .insert(Collider::ball(1.0))
         .insert(ColliderMassProperties::Mass(1.0))
-        .insert(Transform::from_xyz(15.0, 0.0, 0.0))
+        .insert(Transform::from_xyz(r_mag as f32, 0.0, 0.0))
         .insert(ReadMassProperties::default())
         .insert(Velocity::default())
         .insert(Name::new("Earth"))
         .insert(Planet {
-            trajectory: Trajectory { position: traj.0, velocity: traj.1 }
+            trajectory: Trajectory { points: traj }
         });
-
 
     commands.spawn_bundle(PointLightBundle {
         point_light: PointLight {
@@ -307,26 +319,24 @@ fn f(st: &mut ode::State<f64>, _: &NoEnv) {
     let value = &st.value;
     let derive = &mut st.deriv;
 
-    let mut r: Vec3 = Vec3::ZERO;
-    let mut v: Vec3 = Vec3::ZERO;
-    if let [rx, ry, rz] = value[0..3] {
-        if let [vx, vy, vz] = value[3..] {
-            r = Vec3::new(rx as f32, ry as f32, rz as f32);
-            v = Vec3::new(vx as f32, vy as f32, vz as f32);
-        }
-    }
-    let r_norm = r.length();
-   
-    let ax = -r.x as f64 * MU / r_norm.powi(3) as f64;
-    let ay = -r.y as f64 * MU / r_norm.powi(3) as f64;
-    let az = -r.z as f64 * MU / r_norm.powi(3) as f64;
+    let r: Matrix = Matrix {
+        data: value[0..3].to_vec(),
+        row: 3,
+        col: 1,
+        shape: Col,
+    };
+    let r_norm = SimpleNorm::norm(&r);
+  
+    let ax = -r.data[0] * MU / r_norm.powi(3);
+    let ay = -r.data[1] * MU / r_norm.powi(3);
+    let az = -r.data[2] * MU / r_norm.powi(3);
 
-    derive[0] = v.x as f64;
-    derive[1] = v.y as f64;
-    derive[2] = v.z as f64;
-    derive[3] = ax as f64;
-    derive[4] = ay as f64;
-    derive[5] = az as f64;
+    derive[0] = value[3];
+    derive[1] = value[4];
+    derive[2] = value[5];
+    derive[3] = ax;
+    derive[4] = ay;
+    derive[5] = az;
 }
 
 fn main() {
