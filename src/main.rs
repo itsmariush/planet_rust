@@ -96,7 +96,7 @@ fn setup_scene(
     let moon_relative_mag = 2.0;
     let r_mag_moon = r_mag + moon_relative_mag;
     let v_mag_moon = (moon_mu / moon_relative_mag).sqrt();
-    let traj = Planet::calculate_trajectory(vec![0.0, 0.0, 0.0, r_mag_moon, 0.0, 0.0], vec![0.0, 0.0, 0.0, 0.0, 0.0, v_mag_moon], moon_mu, 0.01, 37000);
+    let traj = Planet::calculate_trajectory(vec![0.0, 0.0, 0.0, r_mag_moon, 0.0, 0.0], vec![0.0, 0.0, 0.0, 0.0, 0.0, v_mag_moon], moon_mu, 0.01, 1);
     moon.trajectory = traj;
     // Moon
     commands
