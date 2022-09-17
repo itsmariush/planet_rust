@@ -12,13 +12,7 @@ pub struct TrajectoryPoint {
 }
 
 #[derive(Debug, Default)]
-pub struct Trajectory {
-    pub points: Vec<TrajectoryPoint>,
-}
-
 pub struct PlanetInfo {
-    pub mass: f64,
-    pub trajectory: Vec<TrajectoryPoint>
 }
 
 #[derive(Component)]
@@ -26,8 +20,8 @@ pub struct Sun;
 #[derive(Component)]
 pub struct Planet {
     pub mass: f64,
-    pub parent: Option<Box<Planet>>,
-    pub trajectory: Trajectory,
+    pub trajectory: Vec<TrajectoryPoint>,
+    pub parent: Option<Entity>,
 }
 
 pub const M1: f64 = 333.0;
@@ -35,17 +29,18 @@ pub const M2: f64 = 1.0;
 pub const MU: f64 = (M1*M2)/(M1+M2);
 
 impl Planet {
+    pub fn new(mass: f64, trajectory: Vec<TrajectoryPoint>, parent: Option<Entity>) -> Self {
+        Self {
+            mass: mass,
+            trajectory: trajectory,
+            parent: parent 
+        }
+    }
+
     pub fn relative_mass(m1 : f64, m2: f64) -> f64 {
         (m1 * m2) / (m1 + m2)
     }
-}
 
-impl Trajectory {
-    pub fn new(points: Vec<TrajectoryPoint>) -> Self {
-        Self {
-            points: points
-        }
-    }
     pub fn calculate_trajectory(translation: Vec<f64>, velocity: Vec<f64>, mu: f64, step_size: f64, times: usize) -> Vec<TrajectoryPoint> {
         fn f(st: &mut ode::State<f64>, env: &Vec<f64>) {
             let mu = env[0];

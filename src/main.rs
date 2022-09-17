@@ -59,7 +59,7 @@ fn setup_scene(
     let earth_mass = 1f64;
     let r_mag = 15f64;
     let v_mag = (MU / r_mag).sqrt();
-    let traj = Trajectory::calculate_trajectory(vec![0.0, 0.0, 0.0, r_mag, 0.0, 0.0], vec![0.0, 0.0, 0.0, 0.0, 0.0, v_mag], MU, 0.01, 37000);
+    let traj = Planet::calculate_trajectory(vec![0.0, 0.0, 0.0, r_mag, 0.0, 0.0], vec![0.0, 0.0, 0.0, 0.0, 0.0, v_mag], MU, 0.01, 37000);
     for p in (0..traj.len()).step_by(100) {
         let pos = &traj[p];
         commands
@@ -73,13 +73,9 @@ fn setup_scene(
             })
             .insert(Transform::from_xyz(pos.position[0] as f32, pos.position[1] as f32, pos.position[2] as f32));
     }
-    let earth = Planet {
-            mass: earth_mass,
-            parent: None,
-            trajectory: Trajectory::new(traj) 
-        };
+
     // Earth
-    commands
+    let earth = commands
         .spawn_bundle(PbrBundle {
             mesh: meshes.add(Mesh::from(shape::Icosphere {
                 radius: 0.5,
@@ -91,20 +87,17 @@ fn setup_scene(
         .insert(Transform::from_xyz(r_mag as f32, 0.0, 0.0))
         .insert(Velocity::default())
         .insert(Name::new("Earth"))
-        .insert(earth);
+        .insert(Planet::new(earth_mass, traj, None))
+        .id();
 
     let moon_mass = 0.01f64;
     let moon_mu = Planet::relative_mass(earth_mass, moon_mass);
-    let mut moon = Planet {
-        mass: moon_mass,
-        parent: None,
-        trajectory: Trajectory::new(vec![])
-    };
+    let mut moon = Planet::new(moon_mass, vec![], Some(earth));
     let moon_relative_mag = 2.0;
     let r_mag_moon = r_mag + moon_relative_mag;
     let v_mag_moon = (moon_mu / moon_relative_mag).sqrt();
-    let traj = Trajectory::calculate_trajectory(vec![0.0, 0.0, 0.0, r_mag_moon, 0.0, 0.0], vec![0.0, 0.0, 0.0, 0.0, 0.0, v_mag_moon], moon_mu, 0.01, 37000);
-    moon.trajectory.points = traj;
+    let traj = Planet::calculate_trajectory(vec![0.0, 0.0, 0.0, r_mag_moon, 0.0, 0.0], vec![0.0, 0.0, 0.0, 0.0, 0.0, v_mag_moon], moon_mu, 0.01, 37000);
+    moon.trajectory = traj;
     // Moon
     commands
         .spawn_bundle(PbrBundle {
