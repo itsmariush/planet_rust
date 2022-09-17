@@ -174,28 +174,6 @@ fn calculate_trajectory(translation: Vec<f64>, velocity: Vec<f64>, step_size: f6
             });
     }
     return points;
-
-    /*for n in 0..result.row {
-        let row = result.row(n);
-        commands
-            .spawn_bundle(PbrBundle {
-                mesh: meshes.add(Mesh::from(shape::Icosphere {
-                    radius: 0.1,
-                    subdivisions: 3,
-                })),
-                material: materials.add(Color::rgb(1.0, 0.0, 0.0).into()),
-                ..default()
-            })
-            .insert(Transform::from_xyz(
-                row[1] as f32,
-                row[2] as f32,
-                row[3] as f32,
-            ))
-            .insert(ReadMassProperties::default())
-            .insert(Velocity::default())
-            .insert(Name::new("Trajectory1"));
-    }
-    */
 }
 
 fn gravity_system(
@@ -211,7 +189,7 @@ fn gravity_system(
                 transform.translation.y = t.position[1] as f32;
                 transform.translation.z = t.position[2] as f32;
                 if planet.trajectory.points.is_empty() {
-                    planet.trajectory.points = calculate_trajectory(t.position, t.velocity, 1.0, 100);
+                    planet.trajectory.points = calculate_trajectory(t.position, t.velocity, 0.1, 10);
                 }
             },
             None => {
@@ -259,13 +237,13 @@ fn setup_scene(
 
     let r_mag = 15f64;
     let v_mag = (MU / r_mag).sqrt();
-    let traj= calculate_trajectory(vec![r_mag, 0.0, 0.0], vec![0.0, 0.0, v_mag], 1.0, 400);
+    let traj= calculate_trajectory(vec![r_mag, 0.0, 0.0], vec![0.0, 0.0, v_mag], 0.01, 38000);
     for pos in &traj {
         commands
             .spawn_bundle(PbrBundle {
                 mesh: meshes.add(Mesh::from(shape::Icosphere {
-                    radius: 0.2,
-                    subdivisions: 3,
+                    radius: 0.02,
+                    subdivisions: 1,
                 })),
                 material: materials.add(Color::rgb(0.0, 0.0, 1.0).into()),
                 ..default()
@@ -330,10 +308,12 @@ fn f(st: &mut ode::State<f64>, _: &NoEnv) {
     let ax = -r.data[0] * MU / r_norm.powi(3);
     let ay = -r.data[1] * MU / r_norm.powi(3);
     let az = -r.data[2] * MU / r_norm.powi(3);
+    
+    let velocity = &value[3..6];
 
-    derive[0] = value[3];
-    derive[1] = value[4];
-    derive[2] = value[5];
+    derive[0] = velocity[0];
+    derive[1] = velocity[1];
+    derive[2] = velocity[2];
     derive[3] = ax;
     derive[4] = ay;
     derive[5] = az;
