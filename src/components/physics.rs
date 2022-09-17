@@ -16,6 +16,11 @@ pub struct Trajectory {
     pub points: Vec<TrajectoryPoint>,
 }
 
+pub struct PlanetInfo {
+    pub mass: f64,
+    pub trajectory: Vec<TrajectoryPoint>
+}
+
 #[derive(Component)]
 pub struct Sun;
 #[derive(Component)]
@@ -24,8 +29,6 @@ pub struct Planet {
     pub parent: Option<Box<Planet>>,
     pub trajectory: Trajectory,
 }
-
-
 
 pub const M1: f64 = 333.0;
 pub const M2: f64 = 1.0;

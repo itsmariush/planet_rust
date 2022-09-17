@@ -94,17 +94,16 @@ fn setup_scene(
         .insert(earth);
 
     let moon_mass = 0.01f64;
+    let moon_mu = Planet::relative_mass(earth_mass, moon_mass);
     let mut moon = Planet {
         mass: moon_mass,
         parent: None,
         trajectory: Trajectory::new(vec![])
     };
-    let moon_mu = Planet::relative_mass(earth_mass, moon_mass);
     let moon_relative_mag = 2.0;
     let r_mag_moon = r_mag + moon_relative_mag;
     let v_mag_moon = (moon_mu / moon_relative_mag).sqrt();
-    /*
-    let traj = Trajectory::calculate_trajectory(vec![0.0, 0.0, 0.0, r_mag_moon, 0.0, 0.0], vec![0.0, 0.0, 0.0, 0.0, 0.0, v_mag_moon], 0.01, 37000);
+    let traj = Trajectory::calculate_trajectory(vec![0.0, 0.0, 0.0, r_mag_moon, 0.0, 0.0], vec![0.0, 0.0, 0.0, 0.0, 0.0, v_mag_moon], moon_mu, 0.01, 37000);
     moon.trajectory.points = traj;
     // Moon
     commands
@@ -120,7 +119,6 @@ fn setup_scene(
         .insert(Velocity::default())
         .insert(Name::new("Moon"))
         .insert(moon);
-        */
 
     commands.spawn_bundle(PointLightBundle {
         point_light: PointLight {
