@@ -12,7 +12,10 @@ use components::{
     camera::PanOrbitCamera,
     physics::*
 };
-use systems::camera::pan_orbit_camera;
+use systems::{
+    camera::pan_orbit_camera,
+    physics::gravity_system
+};
 
 // Calculate Center of Mass of two bodies
 fn calc_com(m1: f32, m2: f32, r1: Vec3, r2: Vec3) -> Vec3 {
@@ -21,25 +24,6 @@ fn calc_com(m1: f32, m2: f32, r1: Vec3, r2: Vec3) -> Vec3 {
     let ry = (m1 * r1.y + m2 * r2.y) / (m1 + m2);
     let rz = (m1 * r1.z + m2 * r2.z) / (m1 + m2);
     Vec3::new(rx, ry, rz)
-}
-
-
-fn gravity_system(
-    mut query: Query<(&mut Planet, &mut Transform)>,
-) {
-    for (mut planet, mut transform) in query.iter_mut() {
-        match planet.trajectory.points.pop() {
-            Some(t) => {
-                transform.translation.x = t.position[0] as f32;
-                transform.translation.y = t.position[1] as f32;
-                transform.translation.z = t.position[2] as f32;
-                if planet.trajectory.points.is_empty() {
-                    planet.trajectory.points = Trajectory::calculate_trajectory(t.position, t.velocity, 0.01, 10);
-                }
-            },
-            _ => {}
-        }
-    }
 }
 
 fn setup_scene(
