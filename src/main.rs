@@ -64,7 +64,7 @@ fn setup_scene(
 
     let r_mag = 15f64;
     let v_mag = (MU / r_mag).sqrt();
-    let traj = Trajectory::calculate_trajectory(vec![r_mag, 0.0, 0.0], vec![0.0, 0.0, v_mag], 0.01, 37000);
+    let traj = Trajectory::calculate_trajectory(vec![r_mag, 0.0, 0.0, 0.0, 0.0, 0.0], vec![0.0, 0.0, v_mag, 0.0, 0.0, 0.0], 0.01, 37000);
     for p in (0..traj.len()).step_by(100) {
         let pos = &traj[p];
         commands
