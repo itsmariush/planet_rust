@@ -26,6 +26,11 @@ pub const M1: f64 = 333.0;
 pub const M2: f64 = 1.0;
 pub const MU: f64 = (M1*M2)/(M1+M2);
 impl Trajectory {
+    pub fn new(points: Vec<TrajectoryPoint>) -> Self {
+        Self {
+            points: points
+        }
+    }
     pub fn calculate_trajectory(translation: Vec<f64>, velocity: Vec<f64>, step_size: f64, times: usize) -> Vec<TrajectoryPoint> {
 
         fn f(st: &mut ode::State<f64>, _: &NoEnv) {

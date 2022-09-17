@@ -30,12 +30,11 @@ fn gravity_system(
     for (mut planet, mut transform) in query.iter_mut() {
         match planet.trajectory.points.pop() {
             Some(t) => {
-                println!("Planet");
                 transform.translation.x = t.position[0] as f32;
                 transform.translation.y = t.position[1] as f32;
                 transform.translation.z = t.position[2] as f32;
                 if planet.trajectory.points.is_empty() {
-                    planet.trajectory.points = Trajectory::calculate_trajectory(t.position, t.velocity, 0.1, 10);
+                    planet.trajectory.points = Trajectory::calculate_trajectory(t.position, t.velocity, 0.01, 10);
                 }
             },
             _ => {}
@@ -81,10 +80,7 @@ fn setup_scene(
 
     let r_mag = 15f64;
     let v_mag = (MU / r_mag).sqrt();
-    let earth = Planet {
-            trajectory: Trajectory { points: vec![]}
-        };
-    let traj= Trajectory::calculate_trajectory(vec![r_mag, 0.0, 0.0], vec![0.0, 0.0, v_mag], 0.01, 37000);
+    let traj = Trajectory::calculate_trajectory(vec![r_mag, 0.0, 0.0], vec![0.0, 0.0, v_mag], 0.01, 37000);
     for p in (0..traj.len()).step_by(100) {
         let pos = &traj[p];
         commands
@@ -115,7 +111,9 @@ fn setup_scene(
         .insert(ReadMassProperties::default())
         .insert(Velocity::default())
         .insert(Name::new("Earth"))
-        .insert(earth);
+        .insert(Planet {
+            trajectory: Trajectory::new(traj) 
+        });
 
     commands.spawn_bundle(PointLightBundle {
         point_light: PointLight {
