@@ -78,7 +78,7 @@ fn setup_scene(
     let moon_mass = 0.001f64;
     let moon = Planet::new(moon_mass);
     let moon_mu = moon.relative_mass(&earth);
-    let moon_relative_mag = 1.0;
+    let moon_relative_mag = 1.2;
     let r_mag_moon = r_mag + moon_relative_mag;
     let v_mag_moon = (moon_mu / moon_relative_mag).sqrt() + v_mag;
     let mut traj_moon = Trajectory::new(None, moon_mu);
