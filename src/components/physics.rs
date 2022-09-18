@@ -70,16 +70,17 @@ impl Trajectory {
             let r1 = &value[0..3].to_vec();
             let r2 = &value[3..6].to_vec();
             // distance between bodies
-            let r_norm = vec![r2[0] - r1[0], r2[1] - r1[1], r2[2] - r1[2]].norm();
+            let r12 = vec![r2[0] - r1[0], r2[1] - r1[1], r2[2] - r1[2]];
+            let r_norm = r12.norm();
           
             // current velocity
             let v1 = &value[6..9];
             let v2 = &value[9..12];
 
             // acceleration
-            let ax = -r2[0] * mu / r_norm.powi(3);
-            let ay = -r2[1] * mu / r_norm.powi(3);
-            let az = -r2[2] * mu / r_norm.powi(3);
+            let ax = -r12[0] * mu / r_norm.powi(3);
+            let ay = -r12[1] * mu / r_norm.powi(3);
+            let az = -r12[2] * mu / r_norm.powi(3);
 
             // keep position of first body constant for now
             derive[0] = r1[0];
