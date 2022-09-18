@@ -66,10 +66,12 @@ impl Trajectory {
             let mu = env[0];
             let value = &st.value;
             let derive = &mut st.deriv;
+
             // current position
             let r1 = &value[0..3].to_vec();
             let r2 = &value[3..6].to_vec();
-            // distance between bodies
+
+            // vector from body1 to body2
             let r12 = vec![r2[0] - r1[0], r2[1] - r1[1], r2[2] - r1[2]];
             let r_norm = r12.norm();
           
