@@ -55,14 +55,15 @@ fn setup_scene(
         })
         .insert(Name::new("Sun"))
         .insert(Sun);
+    let traj_sun = Trajectory::new(None, 0f64);
 
     let earth_mass = 1f64;
     let r_mag = 15f64;
     let v_mag = (MU / r_mag).sqrt();
-    let mut trajectory = Trajectory::new(None, MU);
-    trajectory.calculate(vec![0.0, 0.0, 0.0, r_mag, 0.0, 0.0], vec![0.0, 0.0, 0.0, 0.0, 0.0, v_mag], MU, 0.01, 37000);
-    for p in (0..trajectory.points.len()).step_by(100) {
-        let pos = &trajectory.points[p];
+    let mut traj_earth = Trajectory::new(None, MU);
+    traj_earth.calculate(&traj_sun, vec![0.0, 0.0, 0.0, r_mag, 0.0, 0.0], vec![0.0, 0.0, 0.0, 0.0, 0.0, v_mag], MU, 0.01, 37000);
+    for p in (0..traj_earth.points.len()).step_by(100) {
+        let pos = &traj_earth.points[&p];
         commands
             .spawn_bundle(PbrBundle {
                 mesh: meshes.add(Mesh::from(shape::Icosphere {
@@ -78,6 +79,11 @@ fn setup_scene(
     let moon_mass = 0.01f64;
     let moon = Planet::new(moon_mass);
     let moon_mu = earth.relative_mass(&moon);
+    let moon_relative_mag = 2.0 + v_mag;
+    let r_mag_moon = r_mag + moon_relative_mag;
+    let v_mag_moon = (moon_mu / moon_relative_mag).sqrt();
+    let mut traj_moon = Trajectory::new(None, moon_mu);
+    traj_moon.calculate(&traj_earth, vec![0.0, 0.0, 0.0, r_mag_moon, 0.0, 0.0], vec![0.0, 0.0, 0.0, 0.0, 0.0, v_mag_moon], moon_mu, 0.01, 1);
     // Earth
     let earth = commands
         .spawn_bundle(PbrBundle {
@@ -92,14 +98,9 @@ fn setup_scene(
         .insert(Velocity::default())
         .insert(Name::new("Earth"))
         .insert(earth)
-        .insert(trajectory)
+        .insert(traj_earth)
         .id();
 
-    let moon_relative_mag = 2.0 + v_mag;
-    let r_mag_moon = r_mag + moon_relative_mag;
-    let v_mag_moon = (moon_mu / moon_relative_mag).sqrt();
-    let mut trajectory = Trajectory::new(Some(earth), moon_mu);
-    trajectory.calculate(vec![0.0, 0.0, 0.0, r_mag_moon, 0.0, 0.0], vec![0.0, 0.0, 0.0, 0.0, 0.0, v_mag_moon], moon_mu, 0.01, 1);
     // Moon
     commands
         .spawn_bundle(PbrBundle {
@@ -114,7 +115,7 @@ fn setup_scene(
         .insert(Velocity::default())
         .insert(Name::new("Moon"))
         .insert(moon)
-        .insert(trajectory);
+        .insert(traj_moon);
 
     commands.spawn_bundle(PointLightBundle {
         point_light: PointLight {
@@ -144,6 +145,7 @@ fn main() {
         .add_plugin(WorldInspectorPlugin::new())
         .add_plugin(LogDiagnosticsPlugin::default())
         .add_plugin(FrameTimeDiagnosticsPlugin::default())
+        .init_resource::<SimulationStep>()
         .add_startup_system(setup_scene)
         .add_system(pan_orbit_camera)
         .add_system(gravity_system)

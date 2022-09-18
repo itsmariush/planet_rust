@@ -5,6 +5,13 @@ use crate::components::{
     physics::*
 };
 
+pub fn simulation_system(
+    time: Res<Time>,
+    mut simulation: ResMut<SimulationStep>
+) {
+    println!("{}", time.delta_seconds());
+}
+
 pub fn gravity_system(
     mut query: Query<(Entity, &mut Transform, Option<&Name>), With<Planet>>,
     mut query_traj: Query<&mut Trajectory>,
@@ -13,6 +20,7 @@ pub fn gravity_system(
     for (entity, mut transform, name) in query.iter_mut() {
         let planet = query_planet.get(entity).unwrap();
         let traj_points = &mut query_traj.get_mut(entity).unwrap().points;
+        /*
         if let Some(t) = traj_points.pop() {            
             transform.translation.x = t.position[0] as f32;
             transform.translation.y = t.position[1] as f32;
@@ -35,5 +43,6 @@ pub fn gravity_system(
         } else {
             // TODO: calculate new trajectory from scratch
         }
+        */
     }
 }
