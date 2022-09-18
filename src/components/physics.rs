@@ -7,14 +7,16 @@ use peroxide::c;
 
 #[derive(Debug, Default)]
 pub struct TrajectoryPoint {
+    pub time: f64,
     pub position: Vec<f64>,
     pub velocity: Vec<f64>,
 }
 
-#[derive(Component)]
+#[derive(Component, Default)]
 pub struct Trajectory {
     pub points: Vec<TrajectoryPoint>,
     pub center: Option<Entity>,
+    pub relative_mass: f64,
 }
 
 #[derive(Component)]
@@ -28,11 +30,13 @@ pub const M1: f64 = 333.0;
 pub const M2: f64 = 1.0;
 pub const MU: f64 = (M1*M2)/(M1+M2);
 
+impl Environment for Trajectory {}
 impl Trajectory {
-    pub fn new(center: Option<Entity>) -> Self{
+    pub fn new(center: Option<Entity>, mu: f64) -> Self{
         Self {
             points: vec![],
-            center: center
+            center: center,
+            relative_mass: mu,
         }
     }
 
@@ -41,7 +45,7 @@ impl Trajectory {
             let mu = env[0];
             let value = &st.value;
             let derive = &mut st.deriv;
-            
+            println!("{}", st.param);
             // current position
             let r1 = &value[0..3].to_vec();
             let r2 = &value[3..6].to_vec();
@@ -95,6 +99,7 @@ impl Trajectory {
             let row = result.row(n);
             points.push(
                 TrajectoryPoint { 
+                    time: row[0],
                     position: row[4..7].to_vec(),
                     velocity: row[10..13].to_vec() 
                 });
