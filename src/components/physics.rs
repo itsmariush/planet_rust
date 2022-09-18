@@ -46,7 +46,7 @@ pub struct Planet {
     pub mass: f64,
 }
 
-pub const M1: f64 = 333.0;
+pub const M1: f64 = 999.0;
 pub const M2: f64 = 1.0;
 pub const MU: f64 = (M1*M2)/(M1+M2);
 
@@ -62,7 +62,6 @@ impl Trajectory {
 
     pub fn calculate(&mut self, translation: Vec<f64>, velocity: Vec<f64>, mu: f64, step_size: f64, times: usize) {
         fn f(st: &mut ode::State<f64>, env: &Vec<f64>) {
-            println!("Param: {}", st.param);
             let mu = env[0];
             let value = &st.value;
             let derive = &mut st.deriv;
@@ -80,9 +79,13 @@ impl Trajectory {
             let v2 = &value[9..12];
 
             // acceleration
-            let ax = -r12[0] * mu / r_norm.powi(3);
-            let ay = -r12[1] * mu / r_norm.powi(3);
-            let az = -r12[2] * mu / r_norm.powi(3);
+            let ax1 = -r1[0] * mu / r_norm.powi(3);
+            let ay1 = -r1[1] * mu / r_norm.powi(3);
+            let az1 = -r1[2] * mu / r_norm.powi(3);
+
+            let ax2 = -r2[0] * mu / r_norm.powi(3);
+            let ay2 = -r2[1] * mu / r_norm.powi(3);
+            let az2 = -r2[2] * mu / r_norm.powi(3);
 
             // keep position of first body constant for now
             derive[0] = v1[0];
@@ -91,12 +94,12 @@ impl Trajectory {
             derive[3] = v2[0];
             derive[4] = v2[1];
             derive[5] = v2[2];
-            derive[6] = ax; 
-            derive[7] = ay;
-            derive[8] = az;
-            derive[9] = ax;
-            derive[10] = ay;
-            derive[11] = az;
+            derive[6] = ax1; 
+            derive[7] = ay1;
+            derive[8] = az1;
+            derive[9] = ax2;
+            derive[10] = ay2;
+            derive[11] = az2;
         }
 
         let mut ode_test = ExplicitODE::new(f);
