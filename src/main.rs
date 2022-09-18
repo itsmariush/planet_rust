@@ -95,7 +95,7 @@ fn setup_scene(
         .insert(trajectory)
         .id();
 
-    let moon_relative_mag = 2.0;
+    let moon_relative_mag = 2.0 + v_mag;
     let r_mag_moon = r_mag + moon_relative_mag;
     let v_mag_moon = (moon_mu / moon_relative_mag).sqrt();
     let mut trajectory = Trajectory::new(Some(earth));
@@ -128,7 +128,7 @@ fn setup_scene(
 
     commands
         .spawn_bundle(Camera3dBundle {
-            transform: Transform::from_xyz(-4.0, 2.5, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
+            transform: Transform::from_xyz(0.0, 20.0, 0.0).looking_at(Vec3::ZERO, Vec3::Z),
             ..default()
         })
         .insert(PanOrbitCamera::default());
