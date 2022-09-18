@@ -163,13 +163,13 @@ impl Trajectory {
             let v2 = &value[9..12];
 
             // acceleration
-            let ax1 = -r1[0] * MU / r_norm.powi(3);
-            let ay1 = -r1[1] * MU / r_norm.powi(3);
-            let az1 = -r1[2] * MU / r_norm.powi(3);
+            let ax1 = -r1[0] * mu / r_norm.powi(3);
+            let ay1 = -r1[1] * mu / r_norm.powi(3);
+            let az1 = -r1[2] * mu / r_norm.powi(3);
 
-            let ax2 = -r2[0] * MU / r_norm.powi(3);
-            let ay2 = -r2[1] * MU / r_norm.powi(3);
-            let az2 = -r2[2] * MU / r_norm.powi(3);
+            let ax2 = -r2[0] * mu / r_norm.powi(3);
+            let ay2 = -r2[1] * mu / r_norm.powi(3);
+            let az2 = -r2[2] * mu / r_norm.powi(3);
 
             // keep position of first body constant for now
             derive[0] = v1[0];
