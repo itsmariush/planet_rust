@@ -147,11 +147,14 @@ impl Trajectory {
 
         fn f(st: &mut ode::State<f64>, env: &DeriveEnv) {
             let mu = env.relative_mass;
+            let parent_traj = &env.points;
             let value = &st.value;
             let derive = &mut st.deriv;
 
+            let def = &TrajectoryPoint { time: 0.0, position: vec![0.0, 0.0, 0.0], velocity: vec![0.0, 0.0, 0.0] };
+            let r1 = &parent_traj.get(&(st.param.ceil() as u64)).unwrap_or(def).position;
             // current position
-            let r1 = &value[0..3].to_vec();
+            //let r1 = &value[0..3].to_vec();
             let r2 = &value[3..6].to_vec();
 
             // vector from body1 to body2
