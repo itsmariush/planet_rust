@@ -153,7 +153,7 @@ impl Trajectory {
 
             println!("Param: {}", st.param);
             let def = &TrajectoryPoint { time: 0.0, position: vec![0.0, 0.0, 0.0], velocity: vec![0.0, 0.0, 0.0] };
-            let r1 = &parent_traj.get(&((st.param*100.0) as u64)).unwrap_or(def).position;
+            let r1 = &parent_traj.get(&((st.param*100.0).ceil() as u64)).unwrap_or(def).position;
             // current position
             //let r1 = &value[0..3].to_vec();
             let r2 = &value[3..6].to_vec();
@@ -163,7 +163,7 @@ impl Trajectory {
             let r_norm = r12.norm();
           
             // current velocity
-            let v1 = &parent_traj.get(&((st.param*100.0) as u64)).unwrap_or(def).velocity;
+            let v1 = &parent_traj.get(&((st.param*100.0).ceil() as u64)).unwrap_or(def).velocity;
             //let v1 = &value[6..9];
             let v2 = &value[9..12];
 

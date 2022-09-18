@@ -30,11 +30,13 @@ pub fn transform_system(
     }
 }
 
+// Calculate Trajectory
 pub fn trajectory_system(
     mut query: Query<(Entity, &mut Transform, Option<&Name>), With<Planet>>,
     mut query_traj: Query<&mut Trajectory>,
     query_planet: Query<&Planet>
 ) {
+    // traj_moon.calculate(TrajectoryPoint::new(0.0, vec![r_mag_moon, 0.0, 0.0], vec![0.0, 0.0, v_mag_moon]), Some(environment), 10000);
     /*
     for (entity, mut transform, name) in query.iter_mut() {
         let planet = query_planet.get(entity).unwrap();
