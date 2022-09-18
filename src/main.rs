@@ -95,11 +95,11 @@ fn setup_scene(
         .insert(trajectory)
         .id();
 
-    let moon_relative_mag = 2.0 + v_mag;
+    let moon_relative_mag = 1.0;
     let r_mag_moon = r_mag + moon_relative_mag;
     let v_mag_moon = (moon_mu / moon_relative_mag).sqrt();
     let mut trajectory = Trajectory::new(Some(earth), moon_mu);
-    trajectory.calculate(vec![0.0, 0.0, 0.0, r_mag_moon, 0.0, 0.0], vec![0.0, 0.0, 0.0, 0.0, 0.0, v_mag_moon], moon_mu, 0.01, 10000);
+    trajectory.calculate(vec![r_mag, 0.0, 0.0, r_mag_moon, 0.0, 0.0], vec![0.0, 0.0, v_mag, 0.0, 0.0, v_mag+v_mag_moon], moon_mu, 0.01, 1000);
     for p in (0..trajectory.points.len()).step_by(100) {
         let pos = &trajectory.points[&(p as u64)];
         commands
