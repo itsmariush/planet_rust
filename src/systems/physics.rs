@@ -5,18 +5,41 @@ use crate::components::{
     physics::*
 };
 
-pub fn gravity_system(
+pub fn simulation_system(
+    time: Res<Time>,
+    mut simulation: ResMut<SimulationStep>
+) {
+    simulation.time_elapsed += time.delta_seconds_f64();
+    if simulation.time_elapsed >= simulation.time_per_step {
+        // passed one or more physics step
+        simulation.step += simulation.step_size;
+        simulation.time_elapsed -= simulation.time_per_step;
+    }
+}
+
+pub fn transform_system(
+    mut query: Query<(&Trajectory, &mut Transform, Option<&Name>), With<Planet>>,
+    simulation: Res<SimulationStep>
+) {
+    for (trajectory, mut transform, name) in query.iter_mut() {
+        if let Some(t) = trajectory.points.get(&simulation.step) {
+            transform.translation.x = t.position[0] as f32;
+            transform.translation.y = t.position[1] as f32;
+            transform.translation.z = t.position[2] as f32;
+        }
+    }
+}
+
+pub fn trajectory_system(
     mut query: Query<(Entity, &mut Transform, Option<&Name>), With<Planet>>,
     mut query_traj: Query<&mut Trajectory>,
     query_planet: Query<&Planet>
 ) {
+    /*
     for (entity, mut transform, name) in query.iter_mut() {
         let planet = query_planet.get(entity).unwrap();
         let traj_points = &mut query_traj.get_mut(entity).unwrap().points;
         if let Some(t) = traj_points.pop() {            
-            transform.translation.x = t.position[0] as f32;
-            transform.translation.y = t.position[1] as f32;
-            transform.translation.z = t.position[2] as f32;
 
             if traj_points.is_empty() {
                 // Calculate new trajectory
@@ -35,5 +58,7 @@ pub fn gravity_system(
         } else {
             // TODO: calculate new trajectory from scratch
         }
+        
     }
+    */
 }

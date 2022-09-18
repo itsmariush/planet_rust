@@ -14,7 +14,7 @@ use components::{
 };
 use systems::{
     camera::pan_orbit_camera,
-    physics::gravity_system
+    physics::*
 };
 
 // Calculate Center of Mass of two bodies
@@ -62,7 +62,7 @@ fn setup_scene(
     let mut trajectory = Trajectory::new(None, MU);
     trajectory.calculate(vec![0.0, 0.0, 0.0, r_mag, 0.0, 0.0], vec![0.0, 0.0, 0.0, 0.0, 0.0, v_mag], MU, 0.01, 37000);
     for p in (0..trajectory.points.len()).step_by(100) {
-        let pos = &trajectory.points[p];
+        let pos = &trajectory.points[&(p as u64)];
         commands
             .spawn_bundle(PbrBundle {
                 mesh: meshes.add(Mesh::from(shape::Icosphere {
@@ -144,8 +144,11 @@ fn main() {
         .add_plugin(WorldInspectorPlugin::new())
         .add_plugin(LogDiagnosticsPlugin::default())
         .add_plugin(FrameTimeDiagnosticsPlugin::default())
+        .init_resource::<SimulationStep>()
         .add_startup_system(setup_scene)
+        .add_system(simulation_system)
         .add_system(pan_orbit_camera)
-        .add_system(gravity_system)
+        .add_system(trajectory_system)
+        .add_system(transform_system)
         .run();
 }

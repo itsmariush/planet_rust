@@ -1,9 +1,29 @@
+use std::collections::HashMap;
 use std::time::Instant;
 
 use bevy::prelude::*;
 use peroxide::prelude::*;
 use peroxide::numerical::ode;
 use peroxide::c;
+
+#[derive(Debug)]
+pub struct SimulationStep {
+    pub time_elapsed: f64,
+    pub time_per_step: f64,
+    pub step: u64,
+    pub step_size: u64
+}
+
+impl Default for SimulationStep {
+    fn default() -> Self {
+        Self {
+            time_elapsed: 0f64,
+            time_per_step: 0.02f64,
+            step: 0,
+            step_size: 1
+        }
+    }
+}
 
 #[derive(Debug, Default)]
 pub struct TrajectoryPoint {
@@ -14,7 +34,7 @@ pub struct TrajectoryPoint {
 
 #[derive(Component, Default)]
 pub struct Trajectory {
-    pub points: Vec<TrajectoryPoint>,
+    pub points: HashMap<u64, TrajectoryPoint>,
     pub center: Option<Entity>,
     pub relative_mass: f64,
 }
@@ -34,7 +54,7 @@ impl Environment for Trajectory {}
 impl Trajectory {
     pub fn new(center: Option<Entity>, mu: f64) -> Self{
         Self {
-            points: vec![],
+            points: HashMap::new(),
             center: center,
             relative_mass: mu,
         }
@@ -42,10 +62,10 @@ impl Trajectory {
 
     pub fn calculate(&mut self, translation: Vec<f64>, velocity: Vec<f64>, mu: f64, step_size: f64, times: usize) {
         fn f(st: &mut ode::State<f64>, env: &Vec<f64>) {
+            println!("Param: {}", st.param);
             let mu = env[0];
             let value = &st.value;
             let derive = &mut st.deriv;
-            println!("{}", st.param);
             // current position
             let r1 = &value[0..3].to_vec();
             let r2 = &value[3..6].to_vec();
@@ -94,17 +114,15 @@ impl Trajectory {
         println!("{result}");
         println!("Time elapsed integrating: {duration:?}");
 
-        let mut points: Vec<TrajectoryPoint> = vec![];
         for n in (0..result.row).rev() {
             let row = result.row(n);
-            points.push(
+            self.points.insert(n as u64, 
                 TrajectoryPoint { 
                     time: row[0],
                     position: row[4..7].to_vec(),
                     velocity: row[10..13].to_vec() 
                 });
         }
-        self.points = points;
     }
 }
 
