@@ -43,7 +43,24 @@ impl TrajectoryPoint {
     }
 }
 
-#[derive(Component, Clone)]
+#[derive(Debug)]
+pub struct DeriveEnv {
+    pub relative_mass: f64,
+    pub points: HashMap<u64, TrajectoryPoint>,
+}
+impl Environment for DeriveEnv{}
+impl Default for DeriveEnv {
+    fn default() -> Self {
+        let mut p: HashMap<u64, TrajectoryPoint> = HashMap::new();
+        p.insert(0, TrajectoryPoint { time: 0f64, position: vec![0.0, 0.0, 0.0], velocity: vec![0.0, 0.0, 0.0]});
+        Self {
+            points: p,
+            relative_mass: MU,
+        }
+    }
+}
+
+#[derive(Component, Clone, Debug)]
 pub struct Trajectory {
     pub points: HashMap<u64, TrajectoryPoint>,
     pub center: Option<Entity>,
@@ -97,11 +114,10 @@ impl Trajectory {
         }
     }
 
-    pub fn calculate(&mut self, start_point: TrajectoryPoint, other_traj: Option<Trajectory>, times: usize) {
+    pub fn calculate(&mut self, start_point: TrajectoryPoint, environment: Option<DeriveEnv>, times: usize) {
         let mut ode_test = ExplicitODE::new(f);
-        let o_traj = other_traj.unwrap_or_default();
+        let o_traj = environment.unwrap_or_default();
         println!("Start Point: {start_point:?}");
-        println!("Other Point: {:?}", o_traj.points[&0]);
         let init_state: ode::State<f64> = ode::State::new(
             0.0,
             c![o_traj.points[&0].position; start_point.position; o_traj.points[&0].velocity; start_point.velocity],
@@ -129,7 +145,7 @@ impl Trajectory {
                 });
         }
 
-        fn f(st: &mut ode::State<f64>, env: &Trajectory) {
+        fn f(st: &mut ode::State<f64>, env: &DeriveEnv) {
             let mu = env.relative_mass;
             let value = &st.value;
             let derive = &mut st.deriv;
@@ -147,13 +163,13 @@ impl Trajectory {
             let v2 = &value[9..12];
 
             // acceleration
-            let ax1 = -r1[0] * mu / r_norm.powi(3);
-            let ay1 = -r1[1] * mu / r_norm.powi(3);
-            let az1 = -r1[2] * mu / r_norm.powi(3);
+            let ax1 = -r1[0] * MU / r_norm.powi(3);
+            let ay1 = -r1[1] * MU / r_norm.powi(3);
+            let az1 = -r1[2] * MU / r_norm.powi(3);
 
-            let ax2 = -r2[0] * mu / r_norm.powi(3);
-            let ay2 = -r2[1] * mu / r_norm.powi(3);
-            let az2 = -r2[2] * mu / r_norm.powi(3);
+            let ax2 = -r2[0] * MU / r_norm.powi(3);
+            let ay2 = -r2[1] * MU / r_norm.powi(3);
+            let az2 = -r2[2] * MU / r_norm.powi(3);
 
             // keep position of first body constant for now
             derive[0] = v1[0];

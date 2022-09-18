@@ -75,14 +75,31 @@ fn setup_scene(
             .insert(Transform::from_xyz(pos.position[0] as f32, pos.position[1] as f32, pos.position[2] as f32));
     }
     let earth = Planet::new(earth_mass);
-    let moon_mass = 0.01f64;
+    let moon_mass = 0.0001f64;
     let moon = Planet::new(moon_mass);
     let moon_mu = earth.relative_mass(&moon);
     let moon_relative_mag = 2.0 + v_mag;
     let r_mag_moon = r_mag + moon_relative_mag;
     let v_mag_moon = (moon_mu / moon_relative_mag).sqrt();
     let mut traj_moon = Trajectory::new(None, moon_mu);
-    traj_moon.calculate(TrajectoryPoint::new(0.0, vec![r_mag_moon, 0.0, 0.0], vec![0.0, 0.0, v_mag_moon]), Some(traj_earth.clone()), 1000);
+    let environment = DeriveEnv {
+        points: traj_earth.points.clone(),
+        relative_mass: moon_mu
+    };
+    traj_moon.calculate(TrajectoryPoint::new(0.0, vec![r_mag_moon, 0.0, 0.0], vec![0.0, 0.0, v_mag_moon]), Some(environment), 1000);
+    for p in (0..traj_moon.points.len()).step_by(100) {
+        let pos = &traj_moon.points[&(p as u64)];
+        commands
+            .spawn_bundle(PbrBundle {
+                mesh: meshes.add(Mesh::from(shape::Icosphere {
+                    radius: 0.05,
+                    subdivisions: 1,
+                })),
+                material: materials.add(Color::rgb(0.0, 1.0, 1.0).into()),
+                ..default()
+            })
+            .insert(Transform::from_xyz(pos.position[0] as f32, pos.position[1] as f32, pos.position[2] as f32));
+    }
     // Earth
     let earth = commands
         .spawn_bundle(PbrBundle {
