@@ -99,7 +99,20 @@ fn setup_scene(
     let r_mag_moon = r_mag + moon_relative_mag;
     let v_mag_moon = (moon_mu / moon_relative_mag).sqrt();
     let mut trajectory = Trajectory::new(Some(earth), moon_mu);
-    trajectory.calculate(vec![0.0, 0.0, 0.0, r_mag_moon, 0.0, 0.0], vec![0.0, 0.0, 0.0, 0.0, 0.0, v_mag_moon], moon_mu, 0.01, 1);
+    trajectory.calculate(vec![0.0, 0.0, 0.0, r_mag_moon, 0.0, 0.0], vec![0.0, 0.0, 0.0, 0.0, 0.0, v_mag_moon], moon_mu, 0.01, 10000);
+    for p in (0..trajectory.points.len()).step_by(100) {
+        let pos = &trajectory.points[&(p as u64)];
+        commands
+            .spawn_bundle(PbrBundle {
+                mesh: meshes.add(Mesh::from(shape::Icosphere {
+                    radius: 0.05,
+                    subdivisions: 1,
+                })),
+                material: materials.add(Color::rgb(0.0, 1.0, 1.0).into()),
+                ..default()
+            })
+            .insert(Transform::from_xyz(pos.position[0] as f32, pos.position[1] as f32, pos.position[2] as f32));
+    }
     // Moon
     commands
         .spawn_bundle(PbrBundle {

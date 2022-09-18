@@ -85,9 +85,9 @@ impl Trajectory {
             let az = -r12[2] * mu / r_norm.powi(3);
 
             // keep position of first body constant for now
-            derive[0] = r1[0];
-            derive[1] = r1[1];
-            derive[2] = r1[2];
+            derive[0] = v1[0];
+            derive[1] = v1[1];
+            derive[2] = v1[2];
             derive[3] = v2[0];
             derive[4] = v2[1];
             derive[5] = v2[2];
