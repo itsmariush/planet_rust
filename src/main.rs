@@ -60,7 +60,7 @@ fn setup_scene(
     let r_mag = 15f64;
     let v_mag = (MU / r_mag).sqrt();
     let mut traj_earth = Trajectory::new(None, MU);
-    traj_earth.calculate(TrajectoryPoint::new(0.0, vec![r_mag, 0.0, 0.0], vec![0.0, 0.0, v_mag]), None, 37000);
+    traj_earth.calculate(&TrajectoryPoint::new(0.0, vec![r_mag, 0.0, 0.0], vec![0.0, 0.0, v_mag]), None, 37000);
     for p in (0..traj_earth.points.len()).step_by(100) {
         let pos = &traj_earth.points[&(p as u64)];
         commands
@@ -78,28 +78,12 @@ fn setup_scene(
     let moon_mass = 1.23f64;
     let moon = Planet::new(moon_mass);
     let moon_mu = moon.relative_mass(&earth);
-    let moon_relative_mag = 2.0;
-    let r_mag_moon = r_mag + moon_relative_mag;
-    let v_mag_moon = (moon_mu / moon_relative_mag).sqrt() + v_mag;
-    let mut traj_moon = Trajectory::new(None, moon_mu);
-    let environment = DeriveEnv {
+    let moon_environment = DeriveEnv {
         points: traj_earth.points.clone(),
-        relative_mass: moon_mu
+        relative_mass: moon_mu,
+        current_step: 0
     };
-    traj_moon.calculate(TrajectoryPoint::new(0.0, vec![r_mag_moon, 0.0, 0.0], vec![0.0, 0.0, v_mag_moon]), Some(environment), 37000);
-    for p in (0..traj_moon.points.len()).step_by(100) {
-        let pos = &traj_moon.points[&(p as u64)];
-        commands
-            .spawn_bundle(PbrBundle {
-                mesh: meshes.add(Mesh::from(shape::Icosphere {
-                    radius: 0.02,
-                    subdivisions: 1,
-                })),
-                material: materials.add(Color::rgb(0.0, 1.0, 1.0).into()),
-                ..default()
-            })
-            .insert(Transform::from_xyz(pos.position[0] as f32, pos.position[1] as f32, pos.position[2] as f32));
-    }
+    println!("Mass: {}, Step: {}", moon_environment.relative_mass, moon_environment.current_step);
     // Earth
     let earth_entity = commands
         .spawn_bundle(PbrBundle {
@@ -117,6 +101,24 @@ fn setup_scene(
         .insert(traj_earth)
         .id();
     // Moon
+    let moon_relative_mag = 2.0;
+    let r_mag_moon = r_mag + moon_relative_mag;
+    let v_mag_moon = (moon_mu / moon_relative_mag).sqrt() + v_mag;
+    let mut traj_moon = Trajectory::new(Some(earth_entity), moon_mu);
+    traj_moon.calculate(&TrajectoryPoint::new(0.0, vec![r_mag_moon, 0.0, 0.0], vec![0.0, 0.0, v_mag_moon]), Some(moon_environment), 1600);
+    for p in (0..traj_moon.points.len()).step_by(100) {
+        let pos = &traj_moon.points[&(p as u64)];
+        commands
+            .spawn_bundle(PbrBundle {
+                mesh: meshes.add(Mesh::from(shape::Icosphere {
+                    radius: 0.02,
+                    subdivisions: 1,
+                })),
+                material: materials.add(Color::rgb(0.0, 1.0, 1.0).into()),
+                ..default()
+            })
+            .insert(Transform::from_xyz(pos.position[0] as f32, pos.position[1] as f32, pos.position[2] as f32));
+    }
     commands
         .spawn_bundle(PbrBundle {
             mesh: meshes.add(Mesh::from(shape::Icosphere {

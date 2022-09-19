@@ -47,7 +47,19 @@ impl TrajectoryPoint {
 pub struct DeriveEnv {
     pub relative_mass: f64,
     pub points: HashMap<u64, TrajectoryPoint>,
+    pub current_step: u64
 }
+
+impl DeriveEnv {
+    pub fn empty(mu: f64) -> Self{
+        Self {
+            relative_mass: mu,
+            points: HashMap::new(),
+            current_step: 0
+        }
+    }
+}
+
 impl Environment for DeriveEnv{}
 impl Default for DeriveEnv {
     fn default() -> Self {
@@ -56,6 +68,7 @@ impl Default for DeriveEnv {
         Self {
             points: p,
             relative_mass: MU,
+            current_step: 0
         }
     }
 }
@@ -103,7 +116,6 @@ impl Default for Trajectory {
         }
     }
 }
-impl Environment for Trajectory {}
 impl Trajectory {
     pub fn new(center: Option<Entity>, mu: f64) -> Self{
         Self {
@@ -113,12 +125,13 @@ impl Trajectory {
         }
     }
 
-    pub fn calculate(&mut self, start_point: TrajectoryPoint, environment: Option<DeriveEnv>, times: usize) {
+    pub fn calculate(&mut self, start_point: &TrajectoryPoint, environment: Option<DeriveEnv>, times: usize) {
         let mut ode_test = ExplicitODE::new(f);
         let o_traj = environment.unwrap_or_default();
+        let current_step = o_traj.current_step;
         println!("Start Point: {start_point:?}");
         let init_state: ode::State<f64> = ode::State::new(
-            0.0,
+            start_point.time,
             c![start_point.position; start_point.velocity],
             vec![0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
             );
@@ -131,12 +144,12 @@ impl Trajectory {
             .set_env(o_traj)
             .integrate();
         let duration = start.elapsed();
-        println!("{result}");
+        //println!("{result}");
         println!("Time elapsed integrating: {duration:?}");
 
         for n in (0..result.row).rev() {
             let row = result.row(n);
-            self.points.insert(n as u64, 
+            self.points.insert(n as u64 + current_step, 
                 TrajectoryPoint { 
                     time: row[0],
                     position: row[1..4].to_vec(),

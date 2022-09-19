@@ -34,33 +34,26 @@ pub fn transform_system(
 pub fn trajectory_system(
     mut query: Query<(Entity, &mut Transform, Option<&Name>), With<Planet>>,
     mut query_traj: Query<&mut Trajectory>,
-    query_planet: Query<&Planet>
+    query_planet: Query<&Planet>,
+    simulation: Res<SimulationStep>
 ) {
-    // traj_moon.calculate(TrajectoryPoint::new(0.0, vec![r_mag_moon, 0.0, 0.0], vec![0.0, 0.0, v_mag_moon]), Some(environment), 10000);
-    /*
     for (entity, mut transform, name) in query.iter_mut() {
         let planet = query_planet.get(entity).unwrap();
-        let traj_points = &mut query_traj.get_mut(entity).unwrap().points;
-        if let Some(t) = traj_points.pop() {            
-
-            if traj_points.is_empty() {
-                // Calculate new trajectory
-                if let Some(center) = query_traj.get(entity).unwrap().center{
-                    // Orbit Arround other entity
-                    let center_planet = query_planet.get(center).unwrap();
-                    let center_traj = &query_traj.get(center).unwrap().points;
-                    let center_position = center_traj[center_traj.len()-1].position.clone();
-                    let center_velocity = center_traj[center_traj.len()-1].velocity.clone();
-                    let mu = center_planet.relative_mass(planet);
-                    query_traj.get_mut(entity).unwrap().calculate(c![center_position; t.position], c![center_velocity; t.velocity], mu, 0.01, 1);
-                } else {
-                    // Orbit arround [0.0, 0.0, 0.0]
-                }
-            }
-        } else {
-            // TODO: calculate new trajectory from scratch
+        let traj_points = &query_traj.get(entity).unwrap().points;
+        let traj_center = query_traj.get(entity).unwrap().center;
+        let traj_rel_mass = query_traj.get(entity).unwrap().relative_mass;
+        let next_step = simulation.step + simulation.step_size;
+        if !traj_points.contains_key(&next_step) {
+            // Calculation trajectory
+            println!("Calculate next trajectory");
+            let current_point = traj_points.get(&simulation.step).expect("No current TrajectoryPoint found to calculate next").clone();
+            let mut env = DeriveEnv::empty(traj_rel_mass);
+            env.current_step = next_step;
+            if let Some(center) = traj_center {
+                env.points = query_traj.get(center).unwrap().points.clone();
+            } 
+            println!("Current Point: {current_point:?}, Mass: {}, Step: {}", env.relative_mass, env.current_step);
+            query_traj.get_mut(entity).unwrap().calculate(&current_point, Some(env), 1600);
         }
-        
     }
-    */
 }
