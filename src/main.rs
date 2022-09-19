@@ -56,11 +56,12 @@ fn setup_scene(
         .insert(Name::new("Sun"))
         .insert(Sun);
 
+    let trajectory_length = 61_000;
     let earth_mass = 100f64;
-    let r_mag = 15f64;
+    let r_mag = 21.0f64;
     let v_mag = (MU / r_mag).sqrt();
     let mut traj_earth = Trajectory::new(None, MU);
-    traj_earth.calculate(&TrajectoryPoint::new(0.0, vec![r_mag, 0.0, 0.0], vec![0.0, 0.0, v_mag]), None, 37000);
+    traj_earth.calculate(&TrajectoryPoint::new(0.0, vec![r_mag, 0.0, 0.0], vec![0.0, 0.0, v_mag]), None, trajectory_length);
     for p in (0..traj_earth.points.len()).step_by(100) {
         let pos = &traj_earth.points[&(p as u64)];
         commands
@@ -104,7 +105,7 @@ fn setup_scene(
     let r_mag_moon = r_mag + moon_relative_mag;
     let v_mag_moon = (moon_mu / moon_relative_mag).sqrt();
     let mut traj_moon = Trajectory::new(Some(earth_entity), moon_mu);
-    traj_moon.calculate(&TrajectoryPoint::new(0.0, vec![r_mag_moon, 0.0, 0.0], vec![0.0, 0.0, v_mag_moon]), Some(moon_environment), 37000);
+    traj_moon.calculate(&TrajectoryPoint::new(0.0, vec![r_mag_moon, 0.0, 0.0], vec![0.0, 0.0, v_mag_moon]), Some(moon_environment), trajectory_length);
     for p in (0..traj_moon.points.len()).step_by(100) {
         let pos = &traj_moon.points[&(p as u64)];
         commands

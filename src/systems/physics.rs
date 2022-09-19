@@ -49,7 +49,7 @@ pub fn trajectory_system(
             if let Some(center) = traj_center {
                 env.points = query_traj.get(center).unwrap().points.clone();
             } 
-            query_traj.get_mut(entity).unwrap().calculate(&current_point, Some(env), 100);
+            query_traj.get_mut(entity).unwrap().calculate(&current_point, Some(env), 1000);
         }
     }
 }
