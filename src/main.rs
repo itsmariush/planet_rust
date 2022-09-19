@@ -26,15 +26,6 @@ fn setup_scene(
 ) {
     rapier_config.gravity = Vec3::ZERO;
 
-    // Plane
-    commands
-        .spawn_bundle(PbrBundle {
-            mesh: meshes.add(Mesh::from(shape::Plane { size: 100.0 })),
-            material: materials.add(Color::rgb(0.5, 0.5, 0.5).into()),
-            ..default()
-        })
-        .insert(Transform::from_xyz(0.0, -2.0, 0.0));
-
     // Sun
     commands
         .spawn_bundle(PbrBundle {
@@ -48,14 +39,14 @@ fn setup_scene(
         .insert(Name::new("Sun"))
         .insert(Sun);
 
-    let trajectory_length = 61_000;
+    let trajectory_length = 60_600;
     let earth_mass = 100f64;
     let r_mag = 21.0f64;
     let v_mag = (MU / r_mag).sqrt();
     let mut traj_earth = Trajectory::new(None, MU);
     traj_earth.calculate(&TrajectoryPoint::new(0.0, vec![r_mag, 0.0, 0.0], vec![0.0, 0.0, v_mag]), None, trajectory_length);
     let earth = Planet::new(earth_mass);
-    let moon_mass = 0.037745f64;
+    let moon_mass = 0.014899999f64;
     let moon = Planet::new(moon_mass);
     let moon_mu = moon.relative_mass(&earth);
     let moon_environment = DeriveEnv {
@@ -80,11 +71,11 @@ fn setup_scene(
         .insert(traj_earth)
         .id();
     // Moon
-    let moon_relative_mag = 1.0;
+    let moon_relative_mag = 1.5;
     let r_mag_moon = r_mag + moon_relative_mag;
     let v_mag_moon = (moon_mu / moon_relative_mag).sqrt();
     let mut traj_moon = Trajectory::new(Some(earth_entity), moon_mu);
-    traj_moon.calculate(&TrajectoryPoint::new(0.0, vec![r_mag_moon, 0.0, 0.0], vec![0.0, 0.0, v_mag_moon]), Some(moon_environment), 1000);
+    traj_moon.calculate(&TrajectoryPoint::new(0.0, vec![r_mag_moon, 0.0, 0.0], vec![0.0, 0.0, v_mag_moon]), Some(moon_environment), trajectory_length);
     commands
         .spawn_bundle(PbrBundle {
             mesh: meshes.add(Mesh::from(shape::Icosphere {
@@ -100,13 +91,15 @@ fn setup_scene(
         .insert(moon)
         .insert(traj_moon);
 
-    commands.spawn_bundle(PointLightBundle {
+    commands.spawn_bundle( PointLightBundle {
         point_light: PointLight {
-            intensity: 1500.0,
+            intensity: 4000.0,
+            range: 1000.0,
+            radius: 1000.0,
             shadows_enabled: true,
             ..default()
         },
-        transform: Transform::from_xyz(4.0, 8.0, 4.0),
+        transform: Transform::from_xyz(0.0, 10.0, 0.0),
         ..default()
     });
 
@@ -121,6 +114,7 @@ fn setup_scene(
 
 fn main() {
     App::new()
+        .insert_resource(ClearColor(Color::rgb(0.0, 0.0, 0.0)))
         .add_plugins(DefaultPlugins)
         .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
         .add_plugin(RapierDebugRenderPlugin::default())

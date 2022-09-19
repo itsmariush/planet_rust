@@ -21,19 +21,20 @@ pub fn simulation_system(
 
 pub fn debug_system(
     query: Query<&Trajectory>,
+    simulation: Res<SimulationStep>,
     mut lines: ResMut<DebugLines>
 ) {
+    let sim_step = simulation.step as usize;
     for trajectory in query.iter() {
-        let step = 100;
+        let draw_step = 120;
         let points = &trajectory.points;
-        for p in (0..trajectory.points.len()).step_by(step) {
+        for p in (0..trajectory.points.len()).step_by(draw_step) {
             let pos_start = &points[&(p as u64)].position;
-            let end_option = &trajectory.points.get(&((p + step) as u64)); //unwrap_or(&points[&0]).position;
+            let end_option = &trajectory.points.get(&((p + draw_step) as u64)); //unwrap_or(&points[&0]).position;
             if end_option.is_none() {
                 break;
             }
             let pos_end = &end_option.unwrap().position;
-
             lines.line(Vec3::new(pos_start[0] as f32, pos_start[1] as f32, pos_start[2] as f32), Vec3::new(pos_end[0] as f32, pos_end[1] as f32, pos_end[2] as f32), 0.0);
         }
     }
