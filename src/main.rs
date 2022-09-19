@@ -75,7 +75,7 @@ fn setup_scene(
             .insert(Transform::from_xyz(pos.position[0] as f32, pos.position[1] as f32, pos.position[2] as f32));
     }
     let earth = Planet::new(earth_mass);
-    let moon_mass = 1.23f64;
+    let moon_mass = 5.0f64;
     let moon = Planet::new(moon_mass);
     let moon_mu = moon.relative_mass(&earth);
     let moon_environment = DeriveEnv {
@@ -83,7 +83,6 @@ fn setup_scene(
         relative_mass: moon_mu,
         current_step: 0
     };
-    println!("Mass: {}, Step: {}", moon_environment.relative_mass, moon_environment.current_step);
     // Earth
     let earth_entity = commands
         .spawn_bundle(PbrBundle {
@@ -105,7 +104,7 @@ fn setup_scene(
     let r_mag_moon = r_mag + moon_relative_mag;
     let v_mag_moon = (moon_mu / moon_relative_mag).sqrt() + v_mag;
     let mut traj_moon = Trajectory::new(Some(earth_entity), moon_mu);
-    traj_moon.calculate(&TrajectoryPoint::new(0.0, vec![r_mag_moon, 0.0, 0.0], vec![0.0, 0.0, v_mag_moon]), Some(moon_environment), 1600);
+    traj_moon.calculate(&TrajectoryPoint::new(0.0, vec![r_mag_moon, 0.0, 0.0], vec![0.0, 0.0, v_mag_moon]), Some(moon_environment), 37000);
     for p in (0..traj_moon.points.len()).step_by(100) {
         let pos = &traj_moon.points[&(p as u64)];
         commands

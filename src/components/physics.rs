@@ -129,7 +129,6 @@ impl Trajectory {
         let mut ode_test = ExplicitODE::new(f);
         let o_traj = environment.unwrap_or_default();
         let current_step = o_traj.current_step;
-        println!("Start Point: {start_point:?}");
         let init_state: ode::State<f64> = ode::State::new(
             start_point.time,
             c![start_point.position; start_point.velocity],
@@ -138,7 +137,7 @@ impl Trajectory {
         let start = Instant::now();
         let result = ode_test
             .set_initial_condition(init_state)
-            .set_method(ExMethod::Euler)
+            .set_method(ExMethod::RK4)
             .set_step_size(TIME_PER_STEP)
             .set_times(times)
             .set_env(o_traj)
@@ -173,7 +172,10 @@ impl Trajectory {
             let r_norm = r12.norm();
           
             // current velocity
+            let v1 = &parent_traj.get(&((st.param*100.0).ceil() as u64)).unwrap_or(def).velocity;
             let v2 = &value[3..6];
+            let v12 = vec![v2[0] + v1[0], v2[1] + v1[1], v2[2] + v1[2]];
+            
 
             // acceleration
             let ax2 = -r12[0] * mu / r_norm.powi(3);
@@ -181,9 +183,9 @@ impl Trajectory {
             let az2 = -r12[2] * mu / r_norm.powi(3);
 
             // keep position of first body constant for now
-            derive[0] = v2[0];
-            derive[1] = v2[1];
-            derive[2] = v2[2];
+            derive[0] = v12[0];
+            derive[1] = v12[1];
+            derive[2] = v12[2];
             derive[3] = ax2;
             derive[4] = ay2;
             derive[5] = az2;
