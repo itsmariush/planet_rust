@@ -17,15 +17,6 @@ use systems::{
     physics::*
 };
 
-// Calculate Center of Mass of two bodies
-fn calc_com(m1: f32, m2: f32, r1: Vec3, r2: Vec3) -> Vec3 {
-    // Rcom = (m1*R1 + m2*R2) / (m1 + m2)
-    let rx = (m1 * r1.x + m2 * r2.x) / (m1 + m2);
-    let ry = (m1 * r1.y + m2 * r2.y) / (m1 + m2);
-    let rz = (m1 * r1.z + m2 * r2.z) / (m1 + m2);
-    Vec3::new(rx, ry, rz)
-}
-
 fn setup_scene(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
@@ -76,7 +67,7 @@ fn setup_scene(
             .insert(Transform::from_xyz(pos.position[0] as f32, pos.position[1] as f32, pos.position[2] as f32));
     }
     let earth = Planet::new(earth_mass);
-    let moon_mass = 0.1f64;
+    let moon_mass = 0.037745f64;
     let moon = Planet::new(moon_mass);
     let moon_mu = moon.relative_mass(&earth);
     let moon_environment = DeriveEnv {
