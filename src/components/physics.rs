@@ -151,7 +151,6 @@ impl Trajectory {
             let value = &st.value;
             let derive = &mut st.deriv;
 
-            println!("Param: {}", st.param);
             let def = &TrajectoryPoint { time: 0.0, position: vec![0.0, 0.0, 0.0], velocity: vec![0.0, 0.0, 0.0] };
             let r1 = &parent_traj.get(&((st.param*100.0).ceil() as u64)).unwrap_or(def).position;
             // current position
