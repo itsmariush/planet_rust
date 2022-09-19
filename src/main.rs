@@ -75,7 +75,7 @@ fn setup_scene(
             .insert(Transform::from_xyz(pos.position[0] as f32, pos.position[1] as f32, pos.position[2] as f32));
     }
     let earth = Planet::new(earth_mass);
-    let moon_mass = 5.0f64;
+    let moon_mass = 0.1f64;
     let moon = Planet::new(moon_mass);
     let moon_mu = moon.relative_mass(&earth);
     let moon_environment = DeriveEnv {
@@ -100,9 +100,9 @@ fn setup_scene(
         .insert(traj_earth)
         .id();
     // Moon
-    let moon_relative_mag = 2.0;
+    let moon_relative_mag = 1.0;
     let r_mag_moon = r_mag + moon_relative_mag;
-    let v_mag_moon = (moon_mu / moon_relative_mag).sqrt() + v_mag;
+    let v_mag_moon = (moon_mu / moon_relative_mag).sqrt();
     let mut traj_moon = Trajectory::new(Some(earth_entity), moon_mu);
     traj_moon.calculate(&TrajectoryPoint::new(0.0, vec![r_mag_moon, 0.0, 0.0], vec![0.0, 0.0, v_mag_moon]), Some(moon_environment), 37000);
     for p in (0..traj_moon.points.len()).step_by(100) {
