@@ -56,13 +56,13 @@ fn setup_scene(
         .insert(Name::new("Sun"))
         .insert(Sun);
 
-    let earth_mass = 1f64;
+    let earth_mass = 100f64;
     let r_mag = 15f64;
     let v_mag = (MU / r_mag).sqrt();
-    let mut trajectory = Trajectory::new(None, MU);
-    trajectory.calculate(vec![0.0, 0.0, 0.0, r_mag, 0.0, 0.0], vec![0.0, 0.0, 0.0, 0.0, 0.0, v_mag], MU, 0.01, 37000);
-    for p in (0..trajectory.points.len()).step_by(100) {
-        let pos = &trajectory.points[&(p as u64)];
+    let mut traj_earth = Trajectory::new(None, MU);
+    traj_earth.calculate(TrajectoryPoint::new(0.0, vec![r_mag, 0.0, 0.0], vec![0.0, 0.0, v_mag]), None, 37000);
+    for p in (0..traj_earth.points.len()).step_by(100) {
+        let pos = &traj_earth.points[&(p as u64)];
         commands
             .spawn_bundle(PbrBundle {
                 mesh: meshes.add(Mesh::from(shape::Icosphere {
@@ -75,14 +75,36 @@ fn setup_scene(
             .insert(Transform::from_xyz(pos.position[0] as f32, pos.position[1] as f32, pos.position[2] as f32));
     }
     let earth = Planet::new(earth_mass);
-    let moon_mass = 0.01f64;
+    let moon_mass = 1.23f64;
     let moon = Planet::new(moon_mass);
-    let moon_mu = earth.relative_mass(&moon);
+    let moon_mu = moon.relative_mass(&earth);
+    let moon_relative_mag = 2.0;
+    let r_mag_moon = r_mag + moon_relative_mag;
+    let v_mag_moon = (moon_mu / moon_relative_mag).sqrt() + v_mag;
+    let mut traj_moon = Trajectory::new(None, moon_mu);
+    let environment = DeriveEnv {
+        points: traj_earth.points.clone(),
+        relative_mass: moon_mu
+    };
+    traj_moon.calculate(TrajectoryPoint::new(0.0, vec![r_mag_moon, 0.0, 0.0], vec![0.0, 0.0, v_mag_moon]), Some(environment), 37000);
+    for p in (0..traj_moon.points.len()).step_by(100) {
+        let pos = &traj_moon.points[&(p as u64)];
+        commands
+            .spawn_bundle(PbrBundle {
+                mesh: meshes.add(Mesh::from(shape::Icosphere {
+                    radius: 0.02,
+                    subdivisions: 1,
+                })),
+                material: materials.add(Color::rgb(0.0, 1.0, 1.0).into()),
+                ..default()
+            })
+            .insert(Transform::from_xyz(pos.position[0] as f32, pos.position[1] as f32, pos.position[2] as f32));
+    }
     // Earth
-    let earth = commands
+    let earth_entity = commands
         .spawn_bundle(PbrBundle {
             mesh: meshes.add(Mesh::from(shape::Icosphere {
-                radius: 0.5,
+                radius: 0.4,
                 subdivisions: 6,
             })),
             material: materials.add(Color::rgb(0.0, 0.0, 1.0).into()),
@@ -92,27 +114,8 @@ fn setup_scene(
         .insert(Velocity::default())
         .insert(Name::new("Earth"))
         .insert(earth)
-        .insert(trajectory)
+        .insert(traj_earth)
         .id();
-
-    let moon_relative_mag = 1.0;
-    let r_mag_moon = r_mag + moon_relative_mag;
-    let v_mag_moon = (moon_mu / moon_relative_mag).sqrt();
-    let mut trajectory = Trajectory::new(Some(earth), moon_mu);
-    trajectory.calculate(vec![r_mag, 0.0, 0.0, r_mag_moon, 0.0, 0.0], vec![0.0, 0.0, v_mag, 0.0, 0.0, v_mag+v_mag_moon], moon_mu, 0.01, 1000);
-    for p in (0..trajectory.points.len()).step_by(100) {
-        let pos = &trajectory.points[&(p as u64)];
-        commands
-            .spawn_bundle(PbrBundle {
-                mesh: meshes.add(Mesh::from(shape::Icosphere {
-                    radius: 0.05,
-                    subdivisions: 1,
-                })),
-                material: materials.add(Color::rgb(0.0, 1.0, 1.0).into()),
-                ..default()
-            })
-            .insert(Transform::from_xyz(pos.position[0] as f32, pos.position[1] as f32, pos.position[2] as f32));
-    }
     // Moon
     commands
         .spawn_bundle(PbrBundle {
@@ -127,7 +130,7 @@ fn setup_scene(
         .insert(Velocity::default())
         .insert(Name::new("Moon"))
         .insert(moon)
-        .insert(trajectory);
+        .insert(traj_moon);
 
     commands.spawn_bundle(PointLightBundle {
         point_light: PointLight {
@@ -141,7 +144,7 @@ fn setup_scene(
 
     commands
         .spawn_bundle(Camera3dBundle {
-            transform: Transform::from_xyz(0.0, 20.0, 0.0).looking_at(Vec3::ZERO, Vec3::Z),
+            transform: Transform::from_xyz(0.0, 30.0, 0.0).looking_at(Vec3::ZERO, Vec3::Z),
             ..default()
         })
         .insert(PanOrbitCamera::default());
