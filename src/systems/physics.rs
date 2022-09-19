@@ -1,14 +1,16 @@
 use bevy::prelude::*;
-use peroxide::c;
+use bevy_prototype_debug_lines::DebugLines;
 
 use crate::components::{
     physics::*
 };
 
+// Update the simulation step when enough time passed
 pub fn simulation_system(
     time: Res<Time>,
     mut simulation: ResMut<SimulationStep>
 ) {
+    // TODO: maybe rework this
     simulation.time_elapsed += time.delta_seconds_f64();
     if simulation.time_elapsed >= simulation.time_per_step {
         // passed one or more physics step
@@ -17,6 +19,27 @@ pub fn simulation_system(
     }
 }
 
+pub fn debug_system(
+    query: Query<&Trajectory>,
+    mut lines: ResMut<DebugLines>
+) {
+    for trajectory in query.iter() {
+        let step = 100;
+        let points = &trajectory.points;
+        for p in (0..trajectory.points.len()).step_by(step) {
+            let pos_start = &points[&(p as u64)].position;
+            let end_option = &trajectory.points.get(&((p + step) as u64)); //unwrap_or(&points[&0]).position;
+            if end_option.is_none() {
+                break;
+            }
+            let pos_end = &end_option.unwrap().position;
+
+            lines.line(Vec3::new(pos_start[0] as f32, pos_start[1] as f32, pos_start[2] as f32), Vec3::new(pos_end[0] as f32, pos_end[1] as f32, pos_end[2] as f32), 0.0);
+        }
+    }
+}
+
+// Update Planets based on simulation step
 pub fn transform_system(
     mut query: Query<(&Trajectory, &mut Transform, Option<&Name>), With<Planet>>,
     simulation: Res<SimulationStep>
@@ -36,20 +59,21 @@ pub fn trajectory_system(
     mut query_traj: Query<&mut Trajectory>,
     simulation: Res<SimulationStep>
 ) {
+    // TODO: clean up / refactor
     for entity in query.iter_mut() {
         let traj_points = &query_traj.get(entity).unwrap().points;
         let traj_center = query_traj.get(entity).unwrap().center;
         let traj_rel_mass = query_traj.get(entity).unwrap().relative_mass;
         let next_step = simulation.step + simulation.step_size;
         if !traj_points.contains_key(&next_step) {
-            // Calculation trajectory
+            // Calculate trajectory
             let current_point = traj_points.get(&simulation.step).expect("No current TrajectoryPoint found to calculate next").clone();
             let mut env = DeriveEnv::empty(traj_rel_mass);
             env.current_step = next_step;
             if let Some(center) = traj_center {
                 env.points = query_traj.get(center).unwrap().points.clone();
             } 
-            query_traj.get_mut(entity).unwrap().calculate(&current_point, Some(env), 1000);
+            query_traj.get_mut(entity).unwrap().calculate(&current_point, Some(env), 10000);
         }
     }
 }
