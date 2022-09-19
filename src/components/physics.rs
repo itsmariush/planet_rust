@@ -126,7 +126,7 @@ impl Trajectory {
         let start = Instant::now();
         let result = ode_test
             .set_initial_condition(init_state)
-            .set_method(ExMethod::RK4)
+            .set_method(ExMethod::Euler)
             .set_step_size(TIME_PER_STEP)
             .set_times(times)
             .set_env(o_traj)

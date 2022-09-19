@@ -75,10 +75,10 @@ fn setup_scene(
             .insert(Transform::from_xyz(pos.position[0] as f32, pos.position[1] as f32, pos.position[2] as f32));
     }
     let earth = Planet::new(earth_mass);
-    let moon_mass = 14f64;
+    let moon_mass = 1.23f64;
     let moon = Planet::new(moon_mass);
     let moon_mu = moon.relative_mass(&earth);
-    let moon_relative_mag = r_mag * 0.06;
+    let moon_relative_mag = 2.0;
     let r_mag_moon = r_mag + moon_relative_mag;
     let v_mag_moon = (moon_mu / moon_relative_mag).sqrt() + v_mag;
     let mut traj_moon = Trajectory::new(None, moon_mu);
