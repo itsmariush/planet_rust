@@ -120,8 +120,8 @@ impl Trajectory {
         println!("Start Point: {start_point:?}");
         let init_state: ode::State<f64> = ode::State::new(
             0.0,
-            c![o_traj.points[&0].position; start_point.position; o_traj.points[&0].velocity; start_point.velocity],
-            vec![0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            c![start_point.position; start_point.velocity],
+            vec![0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
             );
         let start = Instant::now();
         let result = ode_test
@@ -140,8 +140,8 @@ impl Trajectory {
             self.points.insert(n as u64, 
                 TrajectoryPoint { 
                     time: row[0],
-                    position: row[4..7].to_vec(),
-                    velocity: row[10..13].to_vec() 
+                    position: row[1..4].to_vec(),
+                    velocity: row[4..7].to_vec() 
                 });
         }
 
@@ -155,40 +155,27 @@ impl Trajectory {
             let def = &TrajectoryPoint { time: 0.0, position: vec![0.0, 0.0, 0.0], velocity: vec![0.0, 0.0, 0.0] };
             let r1 = &parent_traj.get(&((st.param*100.0).ceil() as u64)).unwrap_or(def).position;
             // current position
-            //let r1 = &value[0..3].to_vec();
-            let r2 = &value[3..6].to_vec();
+            let r2 = &value[0..3].to_vec();
 
             // vector from body1 to body2
             let r12 = vec![r2[0] - r1[0], r2[1] - r1[1], r2[2] - r1[2]];
             let r_norm = r12.norm();
           
             // current velocity
-            let v1 = &parent_traj.get(&((st.param*100.0).ceil() as u64)).unwrap_or(def).velocity;
-            //let v1 = &value[6..9];
-            let v2 = &value[9..12];
+            let v2 = &value[3..6];
 
             // acceleration
-            let ax1 = -r1[0] * mu / r_norm.powi(3);
-            let ay1 = -r1[1] * mu / r_norm.powi(3);
-            let az1 = -r1[2] * mu / r_norm.powi(3);
-
-            let ax2 = -r2[0] * mu / r_norm.powi(3);
-            let ay2 = -r2[1] * mu / r_norm.powi(3);
-            let az2 = -r2[2] * mu / r_norm.powi(3);
+            let ax2 = -r12[0] * mu / r_norm.powi(3);
+            let ay2 = -r12[1] * mu / r_norm.powi(3);
+            let az2 = -r12[2] * mu / r_norm.powi(3);
 
             // keep position of first body constant for now
-            derive[0] = v1[0];
-            derive[1] = v1[1];
-            derive[2] = v1[2];
-            derive[3] = v2[0];
-            derive[4] = v2[1];
-            derive[5] = v2[2];
-            derive[6] = ax1; 
-            derive[7] = ay1;
-            derive[8] = az1;
-            derive[9] = ax2;
-            derive[10] = ay2;
-            derive[11] = az2;
+            derive[0] = v2[0];
+            derive[1] = v2[1];
+            derive[2] = v2[2];
+            derive[3] = ax2;
+            derive[4] = ay2;
+            derive[5] = az2;
         }
     }
 }
