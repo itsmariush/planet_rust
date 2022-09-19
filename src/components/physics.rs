@@ -21,7 +21,7 @@ impl Default for SimulationStep {
             time_elapsed: 0f64,
             time_per_step: TIME_PER_STEP,
             step: 0,
-            step_size: 1
+            step_size: 8
         }
     }
 }

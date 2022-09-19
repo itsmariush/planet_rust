@@ -56,7 +56,7 @@ fn setup_scene(
         .insert(Name::new("Sun"))
         .insert(Sun);
 
-    let earth_mass = 1f64;
+    let earth_mass = 100f64;
     let r_mag = 15f64;
     let v_mag = (MU / r_mag).sqrt();
     let mut traj_earth = Trajectory::new(None, MU);
@@ -75,10 +75,10 @@ fn setup_scene(
             .insert(Transform::from_xyz(pos.position[0] as f32, pos.position[1] as f32, pos.position[2] as f32));
     }
     let earth = Planet::new(earth_mass);
-    let moon_mass = 0.1f64;
+    let moon_mass = 1.4001f64;
     let moon = Planet::new(moon_mass);
     let moon_mu = moon.relative_mass(&earth);
-    let moon_relative_mag = 2.0;
+    let moon_relative_mag = r_mag * 0.06;
     let r_mag_moon = r_mag + moon_relative_mag;
     let v_mag_moon = (moon_mu / moon_relative_mag).sqrt() + v_mag;
     let mut traj_moon = Trajectory::new(None, moon_mu);
@@ -92,7 +92,7 @@ fn setup_scene(
         commands
             .spawn_bundle(PbrBundle {
                 mesh: meshes.add(Mesh::from(shape::Icosphere {
-                    radius: 0.05,
+                    radius: 0.02,
                     subdivisions: 1,
                 })),
                 material: materials.add(Color::rgb(0.0, 1.0, 1.0).into()),
@@ -101,10 +101,10 @@ fn setup_scene(
             .insert(Transform::from_xyz(pos.position[0] as f32, pos.position[1] as f32, pos.position[2] as f32));
     }
     // Earth
-    let earth = commands
+    let earth_entity = commands
         .spawn_bundle(PbrBundle {
             mesh: meshes.add(Mesh::from(shape::Icosphere {
-                radius: 0.5,
+                radius: 0.4,
                 subdivisions: 6,
             })),
             material: materials.add(Color::rgb(0.0, 0.0, 1.0).into()),
@@ -145,7 +145,7 @@ fn setup_scene(
 
     commands
         .spawn_bundle(Camera3dBundle {
-            transform: Transform::from_xyz(0.0, 20.0, 0.0).looking_at(Vec3::ZERO, Vec3::Z),
+            transform: Transform::from_xyz(0.0, 30.0, 0.0).looking_at(Vec3::ZERO, Vec3::Z),
             ..default()
         })
         .insert(PanOrbitCamera::default());
