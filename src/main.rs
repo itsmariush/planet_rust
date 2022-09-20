@@ -39,14 +39,14 @@ fn setup_scene(
         .insert(Name::new("Sun"))
         .insert(Sun);
 
-    let trajectory_length = 60_600;
+    let trajectory_length = 60_000;
     let earth_mass = 100f64;
-    let r_mag = 21.0f64;
+    let r_mag = 20.0f64;
     let v_mag = (MU / r_mag).sqrt();
     let mut traj_earth = Trajectory::new(None, MU);
     traj_earth.calculate(&TrajectoryPoint::new(0.0, vec![r_mag, 0.0, 0.0], vec![0.0, 0.0, v_mag]), None, trajectory_length);
     let earth = Planet::new(earth_mass);
-    let moon_mass = 0.014899999f64;
+    let moon_mass = 0.0149f64;
     let moon = Planet::new(moon_mass);
     let moon_mu = moon.relative_mass(&earth);
     let moon_environment = DeriveEnv {
