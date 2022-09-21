@@ -39,7 +39,7 @@ fn setup_scene(
         .insert(Name::new("Sun"))
         .insert(Sun);
 
-    let trajectory_length = 60_000;
+    let trajectory_length = 56_280;
     let earth_mass = 100f64;
     let r_mag = 20.0f64;
     let v_mag = (MU / r_mag).sqrt();
