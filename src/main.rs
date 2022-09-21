@@ -2,7 +2,6 @@ use bevy::prelude::*;
 use bevy_inspector_egui::WorldInspectorPlugin;
 use bevy_inspector_egui_rapier::InspectableRapierPlugin;
 use bevy_prototype_debug_lines::DebugLinesPlugin;
-use bevy_rapier3d::prelude::*;
 use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 extern crate peroxide;
 
@@ -22,9 +21,7 @@ fn setup_scene(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    mut rapier_config: ResMut<RapierConfiguration>,
 ) {
-    rapier_config.gravity = Vec3::ZERO;
 
     // Sun
     commands
@@ -65,7 +62,6 @@ fn setup_scene(
             ..default()
         })
         .insert(Transform::from_xyz(r_mag as f32, 0.0, 0.0))
-        .insert(Velocity::default())
         .insert(Name::new("Earth"))
         .insert(earth)
         .insert(traj_earth)
@@ -86,7 +82,6 @@ fn setup_scene(
             ..default()
         })
         .insert(Transform::from_xyz(r_mag_moon as f32, 0.0, 0.0))
-        .insert(Velocity::default())
         .insert(Name::new("Moon"))
         .insert(moon)
         .insert(traj_moon);
@@ -116,8 +111,6 @@ fn main() {
     App::new()
         .insert_resource(ClearColor(Color::rgb(0.0, 0.0, 0.0)))
         .add_plugins(DefaultPlugins)
-        .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
-        .add_plugin(RapierDebugRenderPlugin::default())
         .add_plugin(InspectableRapierPlugin)
         .add_plugin(WorldInspectorPlugin::new())
         .add_plugin(LogDiagnosticsPlugin::default())
