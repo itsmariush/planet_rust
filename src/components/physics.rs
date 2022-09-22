@@ -88,7 +88,7 @@ pub struct Planet {
     pub mass: f64,
 }
 
-pub const M1: f64 = 999.0;
+pub const M1: f64 = 9.0;
 pub const M2: f64 = 1.0;
 pub const MU: f64 = (M1*M2)/(M1+M2);
 impl Planet {
