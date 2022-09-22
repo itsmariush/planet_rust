@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::time::Instant;
 
 use bevy::prelude::*;
+use bevy_inspector_egui::Inspectable;
 use peroxide::prelude::*;
 use peroxide::numerical::ode;
 use peroxide::c;
@@ -82,7 +83,7 @@ pub struct Trajectory {
 
 #[derive(Component)]
 pub struct Sun;
-#[derive(Component)]
+#[derive(Component, Inspectable)]
 pub struct Planet {
     pub mass: f64,
 }
@@ -97,9 +98,7 @@ impl Planet {
         }
     }
 
-    pub fn relative_mass(&self, other: &Planet) -> f64 {
-        let m1 = self.mass;
-        let m2 = other.mass;
+    pub fn relative_mass(m1: f64, m2: f64) -> f64 {
         (m1 * m2) / (m1 + m2)
     }
 

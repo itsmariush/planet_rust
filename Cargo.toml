@@ -8,7 +8,6 @@ edition = "2021"
 [dependencies]
 bevy = { version="0.8.0", features=[ "dynamic"] }
 bevy-inspector-egui = "0.12.1"
-bevy-inspector-egui-rapier = { version = "0.5.0", features = [ 'rapier3d' ] }
 bevy_prototype_debug_lines = { version = "0.8.1", features = ["3d"] }
 peroxide = {version = "*", features = []} 
 

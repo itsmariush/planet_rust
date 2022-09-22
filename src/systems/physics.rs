@@ -10,7 +10,7 @@ pub fn simulation_system(
     time: Res<Time>,
     mut simulation: ResMut<SimulationStep>
 ) {
-    // TODO: maybe rework this
+    // TODO: rework this
     simulation.time_elapsed += time.delta_seconds_f64();
     if simulation.time_elapsed >= simulation.time_per_step {
         // passed one or more physics step
@@ -57,24 +57,27 @@ pub fn transform_system(
 // Calculate Trajectory
 pub fn trajectory_system(
     mut query: Query<Entity, With<Planet>>,
+    query_planet: Query<&Planet>,
     mut query_traj: Query<&mut Trajectory>,
     simulation: Res<SimulationStep>
 ) {
     // TODO: clean up / refactor
     for entity in query.iter_mut() {
         let traj_points = &query_traj.get(entity).unwrap().points;
-        let traj_center = query_traj.get(entity).unwrap().center;
-        let traj_rel_mass = query_traj.get(entity).unwrap().relative_mass;
         let next_step = simulation.step + simulation.step_size;
         if !traj_points.contains_key(&next_step) {
+            let traj_center = query_traj.get(entity).unwrap().center;
+            let p_mass1 = query_planet.get(entity).unwrap().mass;
             // Calculate trajectory
             let current_point = traj_points.get(&simulation.step).expect("No current TrajectoryPoint found to calculate next").clone();
-            let mut env = DeriveEnv::empty(traj_rel_mass);
-            env.current_step = next_step;
+            let mut env = DeriveEnv::empty(MU);
+            env.current_step = simulation.step;
             if let Some(center) = traj_center {
                 env.points = query_traj.get(center).unwrap().points.clone();
+                let p_mass2 = query_planet.get(center).unwrap().mass;
+                env.relative_mass = Planet::relative_mass(p_mass1, p_mass2);
             } 
-            query_traj.get_mut(entity).unwrap().calculate(&current_point, Some(env), 10000);
+            query_traj.get_mut(entity).unwrap().calculate(&current_point, Some(env), 1000);
         }
     }
 }

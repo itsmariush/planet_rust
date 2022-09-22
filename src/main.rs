@@ -1,6 +1,5 @@
 use bevy::prelude::*;
-use bevy_inspector_egui::WorldInspectorPlugin;
-use bevy_inspector_egui_rapier::InspectableRapierPlugin;
+use bevy_inspector_egui::{WorldInspectorPlugin, RegisterInspectable};
 use bevy_prototype_debug_lines::DebugLinesPlugin;
 use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 extern crate peroxide;
@@ -45,7 +44,7 @@ fn setup_scene(
     let earth = Planet::new(earth_mass);
     let moon_mass = 0.0149f64;
     let moon = Planet::new(moon_mass);
-    let moon_mu = moon.relative_mass(&earth);
+    let moon_mu = Planet::relative_mass(moon_mass, earth_mass);//moon.relative_mass(&earth);
     let moon_environment = DeriveEnv {
         points: traj_earth.points.clone(),
         relative_mass: moon_mu,
@@ -71,7 +70,7 @@ fn setup_scene(
     let r_mag_moon = r_mag + moon_relative_mag;
     let v_mag_moon = (moon_mu / moon_relative_mag).sqrt();
     let mut traj_moon = Trajectory::new(Some(earth_entity), moon_mu);
-    traj_moon.calculate(&TrajectoryPoint::new(0.0, vec![r_mag_moon, 0.0, 0.0], vec![0.0, 0.0, v_mag_moon]), Some(moon_environment), trajectory_length);
+    traj_moon.calculate(&TrajectoryPoint::new(0.0, vec![r_mag_moon, 0.0, 0.0], vec![0.0, 0.0, v_mag_moon]), Some(moon_environment), 1000);
     commands
         .spawn_bundle(PbrBundle {
             mesh: meshes.add(Mesh::from(shape::Icosphere {
@@ -111,12 +110,12 @@ fn main() {
     App::new()
         .insert_resource(ClearColor(Color::rgb(0.0, 0.0, 0.0)))
         .add_plugins(DefaultPlugins)
-        .add_plugin(InspectableRapierPlugin)
         .add_plugin(WorldInspectorPlugin::new())
         .add_plugin(LogDiagnosticsPlugin::default())
         .add_plugin(FrameTimeDiagnosticsPlugin::default())
         .add_plugin(DebugLinesPlugin::with_depth_test(true))
         .init_resource::<SimulationStep>()
+        .register_inspectable::<Planet>()
         .add_startup_system(setup_scene)
         .add_system(simulation_system)
         .add_system(pan_orbit_camera)
