@@ -54,6 +54,7 @@ pub fn transform_system(
     }
 }
 
+
 // Calculate Trajectory
 pub fn trajectory_system(
     mut query: Query<Entity, With<Planet>>,

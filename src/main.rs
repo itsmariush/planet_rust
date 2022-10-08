@@ -120,14 +120,15 @@ fn calc_eccentricity(r1: &Vec<f64>, r2: &Vec<f64>, v1: &Vec<f64>, v2: &Vec<f64>,
     let r2 = Vec3::new(r2[0] as f32, r2[1] as f32, r2[2] as f32);
     let v2 = Vec3::new(v2[0] as f32, v2[1] as f32, v2[2] as f32);
 
-    let r = r1 - r2;
-    let v = v1 - v2;
+    let r = r2 - r1;
+    let v = v2 - v1;
+    //let g = 6.674e-11;
 
     // e = ((v x (v x r)) / (m1 + m2)) - (r / |r|)
     let r_length = r.length();
     let rcrossv = r.cross(v);
     let rvcrossv = rcrossv.cross(v);
-    let e = rvcrossv / ((m1 + m2) as f32) - (r / r_length);
+    let e = (rvcrossv / ((m1 + m2) as f32)) - (r / r_length);
     println!("{:?}", e.length());
 }
 
